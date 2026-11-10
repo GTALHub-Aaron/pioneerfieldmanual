@@ -2215,7 +2215,7 @@ function mapFocus(id,zoom){const o=mapFind(id);if(!o)return;MAP.sel=id;const w=m
 function mapVis(){const D=MAP.data,cl=mapClaims();if(!D)return{nodes:[],cols:[],cl};
   const nodes=MAPF.nodes?D.nodes.filter(n=>MAPF.res[n.r]!==false&&MAPF.pur[n.p]!==false&&!(MAPF.free&&cl[n.id])):[];
   const cols=MAPF.cols?D.cols.filter(c=>MAPF.col[c.k]!==false):[];return{nodes,cols,cl}}
-const ICACHE={},MDISK='#9a9fa8';
+const ICACHE={},MDISK='#9a9fa8',MPC={Impure:'#e36b2c',Normal:'#f0b429',Pure:'#43b05c'};
 /* nodes with a miner, extractor or geothermal generator from the server sitting on them */
 function liveTapped(){const key=(LIVE.d?LIVE.d.synced:0)+'|'+(MAP.data?MAP.data.nodes.length:0);if(LIVE._tk===key)return LIVE.tap;
   const tap=new Map();if(LIVE.d&&MAP.data){const ex=LIVE.bl.filter(b=>/Miner|OilPump|FrackingExtractor|GeoThermal/.test(b.cls));
@@ -2406,20 +2406,27 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
       g.fill();g.stroke();if(c.k==='mercer'){g.beginPath();g.arc(0,0,s*.32,0,7);g.fillStyle='#fff';g.fill()}}
     g.restore()});
   const tap=liveTapped();
-  nodes.forEach(n=>{const p=S2(n);if(!on(p))return;const im=r>=7&&mIcon(ITEM_CLS[n.r]),pw=Math.max(2,r*.28);
-    g.beginPath();g.arc(p.x,p.y,r+pw/2+1,0,7);g.fillStyle='#000';g.fill();
-    g.beginPath();g.arc(p.x,p.y,r,0,7);g.fillStyle=im?MDISK:(MRES[n.r]||'#888');g.fill();
-    if(im)g.drawImage(im,p.x-r*.8,p.y-r*.8,r*1.6,r*1.6);
-    g.lineWidth=pw;g.strokeStyle=pc[n.p]||ink;g.beginPath();g.arc(p.x,p.y,r,0,7);g.stroke();
-    if(tap.has(n.id)){const bx=p.x+r*.8,by=p.y-r*.8,br=Math.max(5,r*.45);g.beginPath();g.arc(bx,by,br+1.2,0,7);g.fillStyle='#000';g.fill();g.beginPath();g.arc(bx,by,br,0,7);g.fillStyle='#22b14c';g.fill();
-      g.lineWidth=Math.max(1.6,br*.32);g.strokeStyle='#fff';g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(bx-br*.48,by+br*.02);g.lineTo(bx-br*.12,by+br*.4);g.lineTo(bx+br*.52,by-br*.36);g.stroke()}
-    if(n.k!=='node'){g.lineWidth=1.5;g.strokeStyle=ink;g.beginPath();g.arc(p.x,p.y,r+2.5,0,7);g.stroke()}
-    if(cl[n.id]){g.lineWidth=3;g.strokeStyle=acc;g.beginPath();g.arc(p.x,p.y,r+(n.k!=='node'?6:4.5),0,7);g.stroke()}});
+  /* zoomed in: each node is a big purity-coloured badge on a leader line, the dot marks the exact spot */
+  const zr=MV.z/MV.fz,pin=zr>=2,rn=pin?Math.max(10,Math.min(19,8+zr*.7)):r,hits=[];
+  cols.forEach(c=>{const p=S2(c);if(on(p))hits.push({o:c,x:p.x,y:p.y,r:r*.85+2})});
+  const vis=nodes.map(n=>{const p=S2(n);return on(p)&&{n,p,c:pin?{x:p.x-rn*.8,y:p.y-rn*2}:p}}).filter(Boolean).sort((a,b)=>a.p.y-b.p.y);
+  if(pin){g.strokeStyle='#000';g.fillStyle='#000';g.lineWidth=2;vis.forEach(({p,c})=>{g.beginPath();g.moveTo(c.x,c.y);g.lineTo(p.x,p.y);g.stroke();g.beginPath();g.arc(p.x,p.y,3,0,7);g.fill()})}
+  vis.forEach(({n,p,c})=>{const im=rn>=7&&mIcon(ITEM_CLS[n.r]),fill=MPC[n.p]||'#888';hits.push({o:n,x:c.x,y:c.y,r:rn+2,dx:p.x,dy:p.y});
+    g.beginPath();g.arc(c.x,c.y,rn+1.5,0,7);g.fillStyle='#000';g.fill();
+    g.beginPath();g.arc(c.x,c.y,rn-.5,0,7);g.fillStyle=fill;g.fill();
+    if(im)g.drawImage(im,c.x-rn*.72,c.y-rn*.72,rn*1.44,rn*1.44);
+    else{g.beginPath();g.arc(c.x,c.y,rn*.45,0,7);g.fillStyle=MRES[n.r]||'#888';g.fill();g.lineWidth=1;g.strokeStyle='#000';g.stroke()}
+    if(n.k!=='node'&&pin){g.lineWidth=1.5;g.strokeStyle=ink;g.setLineDash([3,2]);g.beginPath();g.arc(c.x,c.y,rn+4,0,7);g.stroke();g.setLineDash([])}
+    if(cl[n.id]){g.lineWidth=3;g.strokeStyle=acc;g.beginPath();g.arc(c.x,c.y,rn+(n.k!=='node'?7.5:5),0,7);g.stroke()}
+    if(tap.has(n.id)){const bx=c.x+rn*.78,by=c.y-rn*.78,br=pin?Math.max(5,rn*.42):Math.max(2,rn*.45);g.beginPath();g.arc(bx,by,br+(pin?1.4:.8),0,7);g.fillStyle='#000';g.fill();g.beginPath();g.arc(bx,by,br,0,7);g.fillStyle='#22b14c';g.fill();
+      if(br>=4){g.lineWidth=Math.max(1.6,br*.32);g.strokeStyle='#fff';g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(bx-br*.48,by+br*.02);g.lineTo(bx-br*.12,by+br*.4);g.lineTo(bx+br*.52,by-br*.36);g.stroke()}}});
+  MAP.hits=hits;MAP.rn=rn;
   livePlayers(g,S2,on);
-  const so=MAP.sel&&mapFind(MAP.sel);if(so){const p=S2(so);g.lineWidth=2.5;g.strokeStyle=ink;g.setLineDash([5,4]);g.beginPath();g.arc(p.x,p.y,r+9,0,7);g.stroke();g.setLineDash([])}
+  const so=MAP.sel&&mapFind(MAP.sel);if(so){const hh=hits.find(h=>h.o===so),p=hh||S2(so),rr=hh?hh.r:r;g.lineWidth=2.5;g.strokeStyle=ink;g.setLineDash([5,4]);g.beginPath();g.arc(p.x,p.y,rr+8,0,7);g.stroke();g.setLineDash([])}
   $('#mzLbl').textContent=Math.round(MV.z/MV.fz*100)+'%'}
-function mapHit(cx,cy){const {nodes,cols}=mapVis(),r=MAP.r;let best=null,bd=Infinity;
-  for(const o of [...nodes,...cols]){const d=Math.hypot(MV.x+o.mx*MV.z-cx,MV.y+o.my*MV.z-cy);if(d<r+5&&d<bd){bd=d;best=o}}return best}
+function mapHit(cx,cy){let best=null,bd=Infinity;
+  /* later badges are drawn on top, so walk backwards and prefer them */
+  const hs=MAP.hits||[];for(let i=hs.length-1;i>=0;i--){const h=hs[i];let d=Math.hypot(h.x-cx,h.y-cy);if(d>h.r&&h.dx!=null)d=Math.hypot(h.dx-cx,h.dy-cy)<6?0:d;if(d<=h.r+2&&d<bd-0.5){bd=d;best=h.o;if(d<h.r*.9)break}}return best}
 const mM=v=>Math.round(v/100).toLocaleString()+' m',mXY=(x,y)=>`X ${mM(x)} · Y ${mM(y)}`;
 /* screen point -> game world (inverse of w2m) */
 function m2w(cx,cy){const b=MAPF.b,mx=(cx-MV.x)/MV.z,my=(cy-MV.y)/MV.z;return{x:b.x0+mx/MSZ*(b.x1-b.x0),y:b.y0+my/MSZ*(b.y1-b.y0),in:mx>=0&&my>=0&&mx<=MSZ&&my<=mapH()}}
@@ -2453,7 +2460,7 @@ function mapStatus(){const D=MAP.data;return[MAP.tiles?`Map picture: high-resolu
 function mapPalRender(){const D=MAP.data;let h=livePal()+'<h2>Show</h2>';
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{const c=cnt[n.r]=cnt[n.r]||[0,0];c[0]++;if(n.p==='Pure')c[1]++});
     h+=`<label class="mrow"><input type="checkbox" data-mf="nodes"${MAPF.nodes?' checked':''}><b>Resource nodes</b><span class="ct">${D.nodes.length}</span></label>`+
-      `<div class="mchips" role="group" aria-label="Purity">${['Impure','Normal','Pure'].map(p=>`<button type="button" class="mchip" data-mp="${p}" aria-pressed="${MAPF.pur[p]!==false}" style="--pc:var(--${purVar(p)})">${p}</button>`).join('')}</div>`+
+      `<div class="mchips" role="group" aria-label="Purity">${['Impure','Normal','Pure'].map(p=>`<button type="button" class="mchip" data-mp="${p}" aria-pressed="${MAPF.pur[p]!==false}" style="--pc:${MPC[p]}">${p}</button>`).join('')}</div>`+
       `<div class="mlinks"><button type="button" class="linkb" data-mall="1">Show all</button><button type="button" class="linkb" data-mall="0">Hide all</button></div>`+
       Object.keys(cnt).sort(mResSort).map(r=>`<label class="mrow"><input type="checkbox" data-mr="${r}"${MAPF.res[r]!==false?' checked':''}><span class="msw" style="background:${MRES[r]||'#888'}"></span>${r}<span class="ct">${cnt[r][0]}${cnt[r][1]?` · ${cnt[r][1]} pure`:''}</span></label>`).join('')+
       `<label class="mrow" style="margin-top:6px"><input type="checkbox" data-mf="free"${MAPF.free?' checked':''}>Hide nodes this plan uses</label>`}
