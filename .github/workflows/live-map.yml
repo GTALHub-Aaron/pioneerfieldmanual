@@ -4,7 +4,7 @@ on:
     - cron: '*/15 * * * *'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: live-map
   cancel-in-progress: false
@@ -29,14 +29,10 @@ jobs:
         run: |
           mkdir -p out
           python tools/satsync/extract.py "$RUNNER_TEMP/server.sav" out/live.json
-      - name: Publish to the live-data branch
+      - name: Upload the snapshot (private, via the sync-map function)
         env:
-          GH_TOKEN: ${{ github.token }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
         run: |
-          cd out
-          git init -q -b live-data
-          git config user.name "live-map-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add live.json
-          git commit -q -m "Live map $(date -u +%FT%TZ)"
-          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" live-data
+          curl -fsS -X POST "https://hjwuluhdiczmssldyeus.supabase.co/functions/v1/sync-map?upload=1" \
+            -H "x-sync-secret: $SYNC_SECRET" -H "Content-Type: application/json" \
+            --data-binary @out/live.json
