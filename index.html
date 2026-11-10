@@ -436,6 +436,8 @@ body.mapmode .gonly{display:none!important}
 #mapC{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
 .mapv.panning #mapC{cursor:grabbing}
 .mtip{position:absolute;z-index:6;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:5px 9px;font-size:12.5px;line-height:1.4;white-space:nowrap}
+.mtip .mcoord{color:var(--muted);font-family:var(--mono,ui-monospace,monospace);font-size:11.5px}
+.mxy{position:absolute;z-index:5;top:10px;right:10px;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:3px 8px;font:12px var(--mono,ui-monospace,monospace);color:var(--fg);opacity:.92;font-variant-numeric:tabular-nums}
 .mempty{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:5;overflow:auto}
 .mempty .box{max-width:480px;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:var(--shadow);padding:18px 20px;font-size:13.5px;line-height:1.5}
 .mempty h2{font-family:var(--f-display);font-size:21px;font-weight:600;margin:0 0 6px}
@@ -735,7 +737,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     </section>
     <aside class="panel sum" id="sum"></aside>
     <aside class="panel mpal" id="mapPal" aria-label="Map layers and files" hidden></aside>
-    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
+    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
       <div class="legend mleg">Scroll to zoom · drag to pan · click a node for details · M switches views</div>
       <div class="zoom"><button id="mzOut" aria-label="Zoom out">−</button><span id="mzLbl">100%</span><button id="mzIn" aria-label="Zoom in">+</button><button id="mzFit" class="zfit" title="Fit the whole map">Fit</button></div>
       <input type="file" id="mapImgIn" accept="image/*" multiple hidden><input type="file" id="mapDataIn" accept=".json,.js,application/json,text/javascript" hidden><input type="file" id="mapFmIn" webkitdirectory multiple hidden></section>
@@ -2224,18 +2226,22 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
   $('#mzLbl').textContent=Math.round(MV.z/MV.fz*100)+'%'}
 function mapHit(cx,cy){const {nodes,cols}=mapVis(),r=MAP.r;let best=null,bd=Infinity;
   for(const o of [...nodes,...cols]){const d=Math.hypot(MV.x+o.mx*MV.z-cx,MV.y+o.my*MV.z-cy);if(d<r+5&&d<bd){bd=d;best=o}}return best}
+const mM=v=>Math.round(v/100).toLocaleString()+' m',mXY=(x,y)=>`X ${mM(x)} · Y ${mM(y)}`;
+/* screen point -> game world (inverse of w2m) */
+function m2w(cx,cy){const b=MAPF.b,mx=(cx-MV.x)/MV.z,my=(cy-MV.y)/MV.z;return{x:b.x0+mx/MSZ*(b.x1-b.x0),y:b.y0+my/MSZ*(b.y1-b.y0),in:mx>=0&&my>=0&&mx<=MSZ&&my<=mapH()}}
+function mapCursor(cx,cy){const el=$('#mapXY');if(!el)return;if(cx==null){el.hidden=true;return}const w=m2w(cx,cy);el.hidden=!w.in;if(w.in)el.textContent=mXY(w.x,w.y)}
 function mapTip(o,cx,cy){const t=$('#mapTip');if(!o){t.hidden=true;return}const cl=mapClaims()[o.id];
-  t.innerHTML=`<b>${mName(o)}</b>${o.p?` · <span style="color:var(--${purVar(o.p)})">${o.p}</span>`:''}`+(cl?`<br><span style="color:var(--accent)">Used by ${cl.length>1?cl.length+' cards':'a card'} in this plan</span>`:'');
+  t.innerHTML=`<b>${mName(o)}</b>${o.p?` · <span style="color:var(--${purVar(o.p)})">${o.p}</span>`:''}`+`<br><span class="mcoord">${mXY(o.x,o.y)} · height ${mM(o.z)}</span>`+(cl?`<br><span style="color:var(--accent)">Used by ${cl.length>1?cl.length+' cards':'a card'} in this plan</span>`:'');
   t.hidden=false;t.style.left=Math.max(8,Math.min(cx+14,mv.clientWidth-t.offsetWidth-8))+'px';t.style.top=(cy-t.offsetHeight-12<8?cy+16:cy-t.offsetHeight-12)+'px'}
 let mdrag=null;
 mc.addEventListener('pointerdown',e=>{if(e.button!==0)return;mdrag={sx:e.clientX,sy:e.clientY,ox:MV.x,oy:MV.y,moved:false};try{mc.setPointerCapture(e.pointerId)}catch(x){}});
 mc.addEventListener('pointermove',e=>{const R=mv.getBoundingClientRect(),cx=e.clientX-R.left,cy=e.clientY-R.top;
   if(mdrag){const dx=e.clientX-mdrag.sx,dy=e.clientY-mdrag.sy;if(!mdrag.moved&&Math.hypot(dx,dy)>4)mdrag.moved=true;
     if(mdrag.moved){mv.classList.add('panning');MV.touched=true;MV.x=mdrag.ox+dx;MV.y=mdrag.oy+dy;$('#mapTip').hidden=true;mapDraw();return}}
-  const o=mapHit(cx,cy);mc.style.cursor=o?'pointer':'';mapTip(o,cx,cy)});
+  const o=mapHit(cx,cy);mc.style.cursor=o?'pointer':'';mapTip(o,cx,cy);mapCursor(cx,cy)});
 mc.addEventListener('pointerup',e=>{if(!mdrag)return;if(!mdrag.moved){const R=mv.getBoundingClientRect(),o=mapHit(e.clientX-R.left,e.clientY-R.top);MAP.sel=o?o.id:null;mapSideRender();mapDraw()}
   mdrag=null;mv.classList.remove('panning')});
-mc.addEventListener('pointerleave',()=>{$('#mapTip').hidden=true});
+mc.addEventListener('pointerleave',()=>{$('#mapTip').hidden=true;mapCursor(null)});
 mc.addEventListener('wheel',e=>{e.preventDefault();const R=mv.getBoundingClientRect();mapZoom(Math.exp(-e.deltaY*.0015),e.clientX-R.left,e.clientY-R.top)},{passive:false});
 $('#mzIn').onclick=()=>mapZoom(1.4);$('#mzOut').onclick=()=>mapZoom(1/1.4);$('#mzFit').onclick=mapFit;
 new ResizeObserver(()=>{if(!mv.hidden){if(!MV.fit||!MV.touched)mapFit();else mapDraw()}}).observe(mv);
