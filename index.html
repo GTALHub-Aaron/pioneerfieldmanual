@@ -2160,11 +2160,21 @@ const MRES={'Iron Ore':'#9fb0c2','Copper Ore':'#e07b3c','Limestone':'#d8cfae','C
 const MCOL={slug1:['Blue Power Slug','#3d8bfd','Desc_Crystal_C'],slug2:['Yellow Power Slug','#f2c230','Desc_Crystal_mk2_C'],slug3:['Purple Power Slug','#a463f2','Desc_Crystal_mk3_C'],sloop:['Somersloop','#ff5fa8','Desc_WAT1_C'],mercer:['Mercer Sphere','#7d6bff','Desc_WAT2_C'],pod:['Crash site','#f39a4c','Desc_HardDrive_C']};
 const MRORD=[...ORES,'Crude Oil','Nitrogen Gas','Water','Geyser'];
 const mResSort=(a,b)=>{const i=MRORD.indexOf(a),j=MRORD.indexOf(b);return(i<0?99:i)-(j<0?99:j)||a.localeCompare(b)};
-const MAP={img:null,imgSrc:'',data:null,auto:{img:false,data:false},sel:null,r:6};
+const MAP={img:null,imgSrc:'',data:null,auto:{img:false,data:false},sel:null,r:6,tiles:false};
+/* hosted high-res map: map/{k}_{x}_{y}.webp, 2^k × 2^k tiles of 2048 px per level, level 4 = 32768 px across */
+const MT_PX=2048,MT_MAXK=4,MT_RES=MT_PX*2**MT_MAXK,MTC={};
+function mtImg(k,x,y){const key=k+'_'+x+'_'+y;let im=MTC[key];if(!im){im=MTC[key]=new Image();im.decoding='async';im.onload=()=>mapDraw();im.src='map/'+key+'.webp'}return im.complete&&im.naturalWidth?im:null}
+function mapTiles(g,w,h){const dpr=devicePixelRatio||1,k=Math.max(0,Math.min(MT_MAXK,Math.ceil(Math.log2(MV.z*dpr*MSZ/MT_PX)))),n=2**k,ts=MSZ/n,pad=1/MV.z;
+  const base=mtImg(0,0,0);if(base)g.drawImage(base,0,0,MSZ,MSZ);if(!k)return;
+  const x0=Math.max(0,Math.floor(-MV.x/MV.z/ts)),y0=Math.max(0,Math.floor(-MV.y/MV.z/ts)),x1=Math.min(n-1,Math.floor((w-MV.x)/MV.z/ts)),y1=Math.min(n-1,Math.floor((h-MV.y)/MV.z/ts));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const im=mtImg(k,x,y);
+    if(im){g.drawImage(im,x*ts,y*ts,ts+pad,ts+pad);continue}
+    for(let kk=k-1;kk>=1;kk--){const d=k-kk,p=MTC[kk+'_'+(x>>d)+'_'+(y>>d)];if(p&&p.complete&&p.naturalWidth){const f=MT_PX/2**d;
+      g.drawImage(p,(x%2**d)*f,(y%2**d)*f,f,f,x*ts,y*ts,ts+pad,ts+pad);break}}}}
 const mc=$('#mapC'),mv=$('#mapView');let MV={x:0,y:0,z:.2,fit:false,fz:.2},mRAF=0;
 const cssv=k=>getComputedStyle(document.documentElement).getPropertyValue(k).trim();
 const w2m=(X,Y)=>{const b=MAPF.b;return{x:(X-b.x0)/(b.x1-b.x0)*MSZ,y:(Y-b.y0)/(b.y1-b.y0)*MSZ}};
-const mapH=()=>MAP.img?MSZ*MAP.img.naturalHeight/MAP.img.naturalWidth:MSZ;
+const mapH=()=>!MAP.tiles&&MAP.img?MSZ*MAP.img.naturalHeight/MAP.img.naturalWidth:MSZ;
 const mapFind=id=>MAP.data&&(MAP.data.nodes.find(n=>n.id===id)||MAP.data.cols.find(c=>c.id===id));
 function mapClaims(){const c={};S.nodes.forEach(n=>{if(n.node)(c[n.node]=c[n.node]||[]).push(n)});return c}
 const cardName=n=>n.kind==='gen'?GEN[n.gen].name:n.kind==='extract'?EX[n.ex].name+' · '+n.res:n.kind==='recipe'?RMAP[n.recipe].name:'Target';
@@ -2174,7 +2184,7 @@ const purVar=p=>p==='Pure'?'lv3':p==='Impure'?'lv0':'lv2';
 function mapFit(){const w=mv.clientWidth,h=mv.clientHeight;if(!w)return;const z=Math.min(w/MSZ,h/mapH())*.96;MV={x:(w-MSZ*z)/2,y:(h-mapH()*z)/2,z,fit:true,fz:z,touched:false};mapDraw()}
 const mapZMax=()=>MV.fz*80;
 /* Past 2 screen pixels per map pixel the picture can only get blurrier, so it fades back from there and the nodes carry the view. */
-const mapImgAlpha=()=>{if(!MAP.img)return 1;const k=MV.z/(MAP.img.naturalWidth/MSZ);return k<=2?1:Math.max(.3,1-(k-2)/3*.7)};
+const mapImgAlpha=()=>{if(!MAP.img&&!MAP.tiles)return 1;const k=MV.z/((MAP.tiles?MT_RES:MAP.img.naturalWidth)/MSZ);return k<=2?1:Math.max(.3,1-(k-2)/3*.7)};
 function mapZoom(f,cx,cy){const w=mv.clientWidth,h=mv.clientHeight;if(cx==null){cx=w/2;cy=h/2}const z=Math.max(MV.fz*.6,Math.min(mapZMax(),MV.z*f));
   MV.x=cx-(cx-MV.x)*z/MV.z;MV.y=cy-(cy-MV.y)*z/MV.z;MV.z=z;MV.touched=true;mapDraw()}
 function mapFocus(id,zoom){const o=mapFind(id);if(!o)return;MAP.sel=id;const w=mv.clientWidth,h=mv.clientHeight;if(!MV.fit)mapFit();
@@ -2189,7 +2199,8 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
   if(mc.width!==Math.round(w*dpr)||mc.height!==Math.round(h*dpr)){mc.width=Math.round(w*dpr);mc.height=Math.round(h*dpr)}
   const g=mc.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);const H=mapH();
   g.save();g.translate(MV.x,MV.y);g.scale(MV.z,MV.z);
-  if(MAP.img){g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.globalAlpha=mapImgAlpha();g.drawImage(MAP.img,0,0,MSZ,H);g.globalAlpha=1}
+  if(MAP.tiles){g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.globalAlpha=mapImgAlpha();mapTiles(g,w,h);g.globalAlpha=1}
+  else if(MAP.img){g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.globalAlpha=mapImgAlpha();g.drawImage(MAP.img,0,0,MSZ,H);g.globalAlpha=1}
   else if(MAP.data){g.fillStyle=cssv('--panel-2');g.fillRect(0,0,MSZ,H);g.strokeStyle=cssv('--grid');g.lineWidth=1/MV.z;g.beginPath();
     for(let i=0;i<=MSZ;i+=512){g.moveTo(i,0);g.lineTo(i,H);g.moveTo(0,i);g.lineTo(MSZ,i)}g.stroke()}
   g.restore();
@@ -2231,8 +2242,8 @@ new ResizeObserver(()=>{if(!mv.hidden){if(!MV.fit||!MV.touched)mapFit();else map
 new MutationObserver(()=>mapDraw()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>mapDraw());
 /* ---- panels ---- */
-function mapStatus(){const D=MAP.data;return[MAP.img?`Map picture: ${MAP.img.naturalWidth} × ${MAP.img.naturalHeight} px${MAP.auto.img?' (from your icons folder)':''}`:'Map picture: none yet',
-  D?`Map data: ${D.nodes.length} nodes, ${D.cols.length} collectibles${MAP.auto.data?' (from your icons folder)':''}`:'Map data: none yet'].join('<br>')}
+function mapStatus(){const D=MAP.data;return[MAP.tiles?`Map picture: high-resolution map, ${MT_RES} × ${MT_RES} px`:MAP.img?`Map picture: ${MAP.img.naturalWidth} × ${MAP.img.naturalHeight} px${MAP.auto.img?' (from your icons folder)':''}`:'Map picture: none yet',
+  D?`Map data: ${D.nodes.length} nodes, ${D.cols.length} collectibles${MAP.auto.data?(localPage()?' (from your icons folder)':' (built in)'):''}`:'Map data: none yet'].join('<br>')}
 function mapPalRender(){const D=MAP.data;let h='<h2>Show</h2>';
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{const c=cnt[n.r]=cnt[n.r]||[0,0];c[0]++;if(n.p==='Pure')c[1]++});
     h+=`<label class="mrow"><input type="checkbox" data-mf="nodes"${MAPF.nodes?' checked':''}><b>Resource nodes</b><span class="ct">${D.nodes.length}</span></label>`+
@@ -2272,7 +2283,7 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
   if(!h)h='<h2>Map</h2><p class="empty">Load your map files to see resource nodes and collectibles here.</p>';
   h+=`<p class="note">Click a node to see it here and add a miner for it to this plan. Nodes this plan uses get an orange ring.</p>`;
   $('#mapSide').innerHTML=h}
-function mapEmpty(){const e=$('#mapEmpty');if(MAP.img||MAP.data){e.hidden=true;return}e.hidden=false;
+function mapEmpty(){const e=$('#mapEmpty');if(MAP.img||MAP.data||MAP.tiles){e.hidden=true;return}e.hidden=false;
   e.innerHTML=`<div class="box"><h2>No map loaded yet</h2><p>The map uses files from your own copy of the game, exported with FModel, the same way as your icons.</p>`+
     `<ol><li><b>Map picture:</b> export the map tiles (Interface › UI › Assets › MapTest › SlicedMap) and pick all four with <em>Load map picture</em>. They are joined into <code>map.png</code>.</li><li><b>Nodes and collectibles:</b> export the level data as JSON, then pick the <code>GameLevel01</code> folder with <em>Import FModel export</em>.</li></ol>`+
     `<p class="mstat">Put <code>map.png</code> and a saved <code>map-data.js</code> in the <code>icons</code> folder next to the planner and they load on their own.</p>`+
@@ -2290,9 +2301,10 @@ function mapPrep(){if(MAP.data)[...MAP.data.nodes,...MAP.data.cols].forEach(o=>{
 function mapSetData(d,auto){const D=mapNorm(d);if(!D)return false;MAP.data=D;MAP.auto.data=!!auto;mapPrep();if(MAP.sel&&!mapFind(MAP.sel))MAP.sel=null;mapAfterLoad();return true}
 function mapAfterLoad(){mapPalRender();mapSideRender();mapEmpty();if(!mv.hidden){if(!MV.fit)mapFit();else mapDraw()}}
 const localPage=()=>location.protocol==='file:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-function mapAutoData(){return new Promise(res=>{if(!localPage())return res(null);const s=document.createElement('script');s.src='icons/map-data.js';
+function mapAutoData(){return new Promise(res=>{const s=document.createElement('script');s.src=localPage()?'icons/map-data.js':'map/map-data.js';
   s.onload=()=>{res(window.FICSIT_MAP_DATA||null);s.remove()};s.onerror=()=>{res(null);s.remove()};document.head.appendChild(s)})}
 async function mapBoot(){let img=null,data=null;try{img=await MDB.get('image');data=await MDB.get('data')}catch(e){}
+  if(!localPage()&&await probe('map/0_0_0.webp')){MAP.tiles=true;MV.fit=false}
   if(data)mapSetData(data,false);else{const d=await mapAutoData();if(d)mapSetData(d,true)}
   if(img)await mapSetImg(img,false).catch(()=>{});
   else if(localPage())for(const f of['map.png','map.jpg','map.webp'])if(await probe('icons/'+f)){await mapSetImg('icons/'+f,true).catch(()=>{});break}
