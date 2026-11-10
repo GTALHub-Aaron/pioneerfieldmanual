@@ -436,6 +436,26 @@ body.mapmode .gonly{display:none!important}
 #mapC{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
 .mapv.panning #mapC{cursor:grabbing}
 .mtip{position:absolute;z-index:6;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:4px;box-shadow:var(--shadow);padding:5px 9px;font-size:12.5px;line-height:1.4;white-space:nowrap}
+.lcard{position:absolute;z-index:7;pointer-events:none;width:300px;max-width:calc(100% - 16px);background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:10px 12px 8px;font-size:12.5px;line-height:1.35}
+.lcard.pinned{pointer-events:auto;border-color:var(--accent)}
+.lcard img{width:22px;height:22px;object-fit:contain;flex:none}
+.lcard .lc-dot{display:inline-block;width:14px;height:14px;border-radius:3px;background:var(--line);flex:none;margin:4px}
+.lc-x{position:absolute;top:4px;right:6px;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:2px 4px}
+.lc-h{display:flex;gap:9px;align-items:center;padding-right:16px}.lc-h img{width:36px;height:36px}
+.lc-h b{display:block;font-size:14px}.lc-h small{font-size:11.5px}
+.lc-pl{width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #e8541e;flex:none}
+.lc-st{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--c)}.lc-st i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.lc-sec{border-top:1px solid var(--line);margin-top:8px;padding-top:7px}
+.lc-t{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}.lc-t em{font-style:normal;text-transform:none;letter-spacing:0;margin-left:4px}
+.lc-rn{font-weight:600;margin-bottom:2px}.lc-sub{font-size:11px;color:var(--muted);margin:5px 0 1px}.lc-io{margin:1px 0}
+.lc-flow{display:flex;align-items:center;gap:6px}.lc-flow>div{flex:1;min-width:0}.lc-arr{color:var(--muted)}
+.lc-io{display:flex;align-items:center;gap:5px;min-width:0}.lc-io span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lc-io b{font-weight:600;white-space:nowrap;font-size:11.5px}
+.lc-kv{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0}.lc-kv span{color:var(--muted)}
+.lc-pips{display:inline-flex;align-items:center;gap:3px;font-weight:600}.lc-pips i{width:9px;height:9px;transform:rotate(45deg);border:1.5px solid var(--pc);border-radius:2px}.lc-pips i.on{background:var(--pc)}
+.lc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px}
+.lc-cell{display:flex;align-items:center;gap:4px;background:var(--panel-2);border-radius:4px;padding:3px 5px;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden}
+.lc-bar{height:5px;border-radius:3px;background:var(--panel-2);margin:2px 0 6px;overflow:hidden}.lc-bar i{display:block;height:100%;background:var(--accent)}
+.lc-f{margin-top:7px;color:var(--muted);font-family:var(--mono,ui-monospace,monospace);font-size:11px}
 .mtip .mcoord{color:var(--muted);font-family:var(--mono,ui-monospace,monospace);font-size:11.5px}
 .mxy{position:absolute;z-index:5;top:10px;right:10px;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:3px 8px;font:12px var(--mono,ui-monospace,monospace);color:var(--fg);opacity:.92;font-variant-numeric:tabular-nums}
 .mempty{position:absolute;inset:0;display:grid;place-items:center;padding:16px;z-index:5;overflow:auto}
@@ -738,7 +758,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     </section>
     <aside class="panel sum" id="sum"></aside>
     <aside class="panel mpal" id="mapPal" aria-label="Map layers and files" hidden></aside>
-    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
+    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="lcard" id="mapCard" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
       <div class="legend mleg">Scroll to zoom · drag to pan · click a node for details · M switches views</div>
       <div class="zoom"><button id="mzOut" aria-label="Zoom out">−</button><span id="mzLbl">100%</span><button id="mzIn" aria-label="Zoom in">+</button><button id="mzFit" class="zfit" title="Fit the whole map">Fit</button></div>
       <input type="file" id="mapImgIn" accept="image/*" multiple hidden><input type="file" id="mapDataIn" accept=".json,.js,application/json,text/javascript" hidden><input type="file" id="mapFmIn" webkitdirectory multiple hidden></section>
@@ -2261,7 +2281,9 @@ function livePaint(g){const P=LIVE.paths;if(!P)return;const L=MAPF.live,px=1/MV.
     g.strokeStyle='#d9dde5';g.lineWidth=Math.max(1.3*px,1.2*u);g.stroke(P.tube)}
   if(L.belt){g.lineCap='round';g.lineJoin='round';LBELT.forEach((c,i)=>{g.strokeStyle=c;g.lineWidth=Math.max(1.3*px,1.2*u);g.stroke(P.belt[i])})}
   if(L.b){g.lineWidth=Math.max(px,.15*u);g.strokeStyle='rgba(0,0,0,.55)';LCAT.forEach(c=>{g.fillStyle=c[2];g.fill(P.cat[c[0]]);if(MV.z*u*4>6)g.stroke(P.cat[c[0]])})}
-  if(L.wire){g.strokeStyle='rgba(255,226,92,.55)';g.lineWidth=Math.max(.8*px,.25*u);g.stroke(P.wire)}}
+  if(L.wire){g.strokeStyle='rgba(255,226,92,.55)';g.lineWidth=Math.max(.8*px,.25*u);g.stroke(P.wire)}
+  if(typeof LPIN!=='undefined'&&LPIN&&LPIN.b){const q=LPIN.b.pts;g.beginPath();g.moveTo(q[0][0],q[0][1]);q.slice(1).forEach(p=>g.lineTo(p[0],p[1]));g.closePath();
+    g.lineWidth=3*px;g.strokeStyle='#fff';g.setLineDash([6*px,4*px]);g.stroke();g.setLineDash([])}}
 /* players are drawn on screen after the map so they stay readable at any zoom */
 function livePlayers(g,S2,on){if(!LIVE.pl.length||!MAPF.live.pl)return;g.font='600 12px system-ui,sans-serif';g.textBaseline='middle';
   const used=[];LIVE.pl.forEach(p=>{const s=S2(p);if(!on(s))return;g.beginPath();g.arc(s.x,s.y,7,0,7);g.fillStyle='#fff';g.fill();g.lineWidth=3;g.strokeStyle='#e8541e';g.stroke();
@@ -2295,6 +2317,68 @@ function livePal(){let h=`<h2>Server factory</h2>`;
     row('wire','Power lines',d.wires.length,`<span class="msw" style="background:#ffe25c"></span>`)+
     row('pl','Pioneers',LIVE.pl.length,`<span class="msw" style="background:#e8541e"></span>`);
   return h}
+
+/* ---- building card: hover to preview, click to pin ---- */
+const LSLOOP={ConstructorMk1:1,SmelterMk1:1,AssemblerMk1:2,FoundryMk1:2,OilRefinery:2,Converter:2,ManufacturerMk1:4,Blender:4,HadronCollider:4,QuantumEncoder:4,Packager:1};
+const lIco=(d,t)=>d&&ICONS[d]?`<img src="${ICONS[d]}" alt="" title="${escA(t||'')}">`:`<i class="lc-dot"></i>`;
+const lQty=(d,n)=>LFLUID.test(d)?fmt(n/1000)+' m³':Number(n).toLocaleString();
+const lRate=v=>fmt(v)+'/min';
+function lBldDesc(b){const n=lBName(b.cls);return BLD_CLS[n]||(WIKI.bcls||{})[n]||'Desc_'+lKey(b.cls)+'_C'}
+/* the save names the recipe by its class; match it to the planner's recipe by building + ingredients */
+function lMatchRecipe(b){const i=b.info;if(!i.r)return null;if(i._rm!==undefined)return i._rm;lNames();
+  const bn=lBName(b.cls),nm=d=>LINAME[d]||'',ia=new Set((i.ia||[]).map(nm)),oa=new Set((i.oa||[]).map(nm));
+  const pool=RECIPES.filter(r=>r.bld===bn);
+  let m=pool.find(r=>r.out.every(([x])=>oa.has(x))&&r.in.every(([x])=>ia.has(x))&&r.in.length===ia.size&&r.out.length<=oa.size+1);
+  if(!m){const want=lRecipe(i.r).replace(/^Alternate: /,'').toLowerCase();m=pool.find(r=>r.name.toLowerCase()===want)||null}
+  return i._rm=m}
+/* miners and extractors: the save only links to the node, so read type and purity from the map's own node list */
+function lNode(b){if(b._node!==undefined)return b._node;let best=null,bd=1500;
+  if(MAP.data)for(const n of MAP.data.nodes){const d=Math.hypot(n.x-b.x,n.y-b.y);if(d<bd){bd=d;best=n}}return b._node=best}
+function lStatus(i){if(i.off)return['Paused','lv0'];if(i.p==null)return null;if(i.p>=95)return['Running','lv3'];if(i.p>0)return[`Running ${i.p}% of the time`,'lv2'];return['Idle — waiting for input or output space','lv0']}
+function liveCardHTML(h,pinned){const close=pinned?`<button type="button" class="lc-x" data-lclose aria-label="Close">×</button>`:'';
+  if(h.pl){const p=h.pl;return`${close}<div class="lc-h"><span class="lc-pl"></span><div><b>${esc(p.n)}</b><small>Pioneer · position at last sync</small></div></div>`+
+    `<div class="lc-f">${mXY(p.x,p.y)} · height ${mM(p.z)} · ${liveAgo()}</div>`}
+  const b=h.b,i=b.info,k=lKey(b.cls),name=lBName(b.cls),st=lStatus(i);let o=close;
+  o+=`<div class="lc-h">${lIco(lBldDesc(b),name)}<div><b>${esc(name)}</b><small style="color:${b.cat[2]}">${b.cat[1]}</small></div></div>`;
+  if(st)o+=`<div class="lc-st" style="--c:var(--${st[1]})"><i></i>${st[0]}</div>`;
+  const clk=i.c!=null?i.c/100:1,boost=i.s&&i.s>100?i.s/100:1;
+  /* recipe */
+  if(i.r){const r=lMatchRecipe(b);o+=`<div class="lc-sec"><div class="lc-t">Recipe</div><div class="lc-rn">${esc(r?r.name:lRecipe(i.r))}</div>`;
+    if(r){const row=(x,v,out)=>`<div class="lc-io">${lIco(ITEM_CLS[x],x)}<span>${esc(x)}</span><b>${lRate(v*clk*(out?boost:1))}</b></div>`;
+      o+=`<div class="lc-sub">Uses</div>${r.in.map(([x,v])=>row(x,v,0)).join('')}<div class="lc-sub">Makes</div>${r.out.map(([x,v])=>row(x,v,1)).join('')}`}
+    o+='</div>'}
+  /* extraction */
+  if(/Miner|OilPump|Fracking|WaterPump/.test(k)){const n=/WaterPump/.test(k)?null:lNode(b);
+    if(n){o+=`<div class="lc-sec"><div class="lc-t">Extracting</div><div class="lc-io">${lIco(ITEM_CLS[n.r],n.r)}<span>${esc(n.r)}</span><b style="color:var(--${purVar(n.p)})">${n.p||''}</b></div>`;
+      const tier=(k.match(/Mk(\d)/)||[])[1];
+      if(tier&&EX.miner&&ORES.includes(n.r)){const base=EX.miner.tiers['Mk.'+tier][0]*(PUR[n.p]||1);o+=`<div class="lc-kv"><span>Output at full speed</span><b>${lRate(base*clk)}</b></div>`}
+      o+='</div>'}
+    else if(/WaterPump/.test(k))o+=`<div class="lc-sec"><div class="lc-t">Extracting</div><div class="lc-io">${lIco('Desc_Water_C','Water')}<span>Water</span><b>${lRate(120*clk)}</b></div></div>`}
+  /* clock, shards, sloops */
+  if(i.c!=null||i.sh||i.sl){const ms=LSLOOP[k];o+=`<div class="lc-sec"><div class="lc-t">Upgrades</div>`;
+    if(i.c!=null)o+=`<div class="lc-kv"><span>Clock speed</span><b>${fmt(i.c)}%</b></div>`;
+    o+=`<div class="lc-kv"><span>Power Shards</span><b class="lc-pips">${[0,1,2].map(n=>`<i class="${n<(i.sh||0)?'on':''}" style="--pc:#d98bff"></i>`).join('')} ${i.sh||0}/3</b></div>`;
+    if(ms)o+=`<div class="lc-kv"><span>Somersloops</span><b class="lc-pips">${Array.from({length:ms},(_,n)=>`<i class="${n<(i.sl||0)?'on':''}" style="--pc:#ff5fa8"></i>`).join('')} ${i.sl||0}/${ms}${boost>1?` · output ×${fmt(boost)}`:''}</b></div>`;
+    o+='</div>'}
+  /* power */
+  if(i.mw||i.pw){o+=`<div class="lc-sec"><div class="lc-kv"><span>${i.mw?'Power made':'Power draw now'}</span><b>${fmt(i.mw||i.pw)} MW</b></div></div>`}
+  /* buffers inside a machine */
+  const buf=[...(i.in||[]).map(x=>[x,'in']),...(i.out||[]).map(x=>[x,'out'])];
+  if(buf.length&&!/Storage/.test(k))o+=`<div class="lc-sec"><div class="lc-t">Inside the machine</div><div class="lc-grid">${buf.map(([[d,n],w])=>`<div class="lc-cell" title="${escA(lItem(d))} (${w==='in'?'input':'output'})">${lIco(d,lItem(d))}<span>${lQty(d,n)}</span></div>`).join('')}</div></div>`;
+  /* storage and generator fuel */
+  if(i.i&&i.i.length){const sl=i.slots;o+=`<div class="lc-sec"><div class="lc-t">${/Generator/.test(k)?'Fuel':'Contents'}${sl?` <em>${sl[0]}/${sl[1]} slots used</em>`:''}</div>`;
+    if(sl)o+=`<div class="lc-bar"><i style="width:${Math.round(100*sl[0]/Math.max(1,sl[1]))}%"></i></div>`;
+    o+=(i.i.length<=4?i.i.map(([d,n])=>`<div class="lc-io">${lIco(d,lItem(d))}<span>${esc(lItem(d))}</span><b>${lQty(d,n)}</b></div>`).join(''):
+      `<div class="lc-grid">${i.i.map(([d,n])=>`<div class="lc-cell" title="${escA(lItem(d))}">${lIco(d,lItem(d))}<span>${lQty(d,n)}</span></div>`).join('')}</div>`)+'</div>'}
+  else if(i.slots)o+=`<div class="lc-sec"><div class="lc-t">Contents <em>empty · ${i.slots[1]} slots</em></div></div>`;
+  o+=`<div class="lc-f">${mXY(b.x,b.y)} · height ${mM(b.z)}${pinned?'':' · click to pin'}</div>`;
+  return o}
+let LPIN=null;
+function liveCardShow(h,cx,cy,pinned){const t=$('#mapCard');t.innerHTML=liveCardHTML(h,pinned);t.hidden=false;t.classList.toggle('pinned',!!pinned);
+  const W=mv.clientWidth,H=mv.clientHeight,w=t.offsetWidth,hh=t.offsetHeight;
+  let x=cx+18,y=cy-hh/2;if(x+w>W-8)x=cx-w-18;if(x<8)x=8;y=Math.max(8,Math.min(y,H-hh-8));t.style.left=x+'px';t.style.top=y+'px'}
+function liveCardHide(){if(!LPIN)$('#mapCard').hidden=true}
+function liveUnpin(){LPIN=null;$('#mapCard').hidden=true;mapDraw()}
 
 function mapDraw(){if(!mRAF)mRAF=requestAnimationFrame(mapPaint)}
 function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=mv.clientWidth,h=mv.clientHeight;
@@ -2341,10 +2425,14 @@ mc.addEventListener('pointerdown',e=>{if(e.button!==0)return;mdrag={sx:e.clientX
 mc.addEventListener('pointermove',e=>{const R=mv.getBoundingClientRect(),cx=e.clientX-R.left,cy=e.clientY-R.top;
   if(mdrag){const dx=e.clientX-mdrag.sx,dy=e.clientY-mdrag.sy;if(!mdrag.moved&&Math.hypot(dx,dy)>4)mdrag.moved=true;
     if(mdrag.moved){mv.classList.add('panning');MV.touched=true;MV.x=mdrag.ox+dx;MV.y=mdrag.oy+dy;$('#mapTip').hidden=true;mapDraw();return}}
-  const o=mapHit(cx,cy);mc.style.cursor=o?'pointer':'';if(o)mapTip(o,cx,cy);else{const l=liveHit(cx,cy);if(l)liveTip(l,cx,cy);else mapTip(null)}mapCursor(cx,cy)});
-mc.addEventListener('pointerup',e=>{if(!mdrag)return;if(!mdrag.moved){const R=mv.getBoundingClientRect(),o=mapHit(e.clientX-R.left,e.clientY-R.top);MAP.sel=o?o.id:null;mapSideRender();mapDraw()}
+  const o=mapHit(cx,cy);let l=null;if(o){mapTip(o,cx,cy);liveCardHide()}else{mapTip(null);l=liveHit(cx,cy);if(l&&!LPIN)liveCardShow(l,cx,cy,false);else liveCardHide()}
+  mc.style.cursor=o||l?'pointer':'';mapCursor(cx,cy)});
+mc.addEventListener('pointerup',e=>{if(!mdrag)return;if(!mdrag.moved){const R=mv.getBoundingClientRect(),cx=e.clientX-R.left,cy=e.clientY-R.top,o=mapHit(cx,cy);MAP.sel=o?o.id:null;
+    const l=!o&&liveHit(cx,cy);if(l){LPIN=l;$('#mapTip').hidden=true;liveCardShow(l,cx,cy,true)}else if(LPIN)liveUnpin();mapSideRender();mapDraw()}
   mdrag=null;mv.classList.remove('panning')});
-mc.addEventListener('pointerleave',()=>{$('#mapTip').hidden=true;mapCursor(null)});
+mc.addEventListener('pointerleave',()=>{$('#mapTip').hidden=true;liveCardHide();mapCursor(null)});
+$('#mapCard').addEventListener('click',e=>{if(e.target.closest('[data-lclose]'))liveUnpin()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&LPIN&&!mv.hidden)liveUnpin()});
 mc.addEventListener('wheel',e=>{e.preventDefault();const R=mv.getBoundingClientRect();mapZoom(Math.exp(-e.deltaY*.0015),e.clientX-R.left,e.clientY-R.top)},{passive:false});
 $('#mzIn').onclick=()=>mapZoom(1.4);$('#mzOut').onclick=()=>mapZoom(1/1.4);$('#mzFit').onclick=mapFit;
 new ResizeObserver(()=>{if(!mv.hidden){if(!MV.fit||!MV.touched)mapFit();else mapDraw()}}).observe(mv);
