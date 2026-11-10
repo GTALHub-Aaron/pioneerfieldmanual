@@ -93,16 +93,24 @@ def main(src, dst):
     def comp(inst, name):
         return idx.get(inst+'.'+name)
 
-    def inv_summary(ci):
+    def inv_summary(ci, limit=12, slots=False):
         if ci is None: return None
-        st = P(ci).get('mInventoryStacks') or []
-        tot = {}
+        pr = P(ci)
+        st = pr.get('mInventoryStacks') or []
+        tot = {}; used = 0
         for s in st:
             if not isinstance(s, dict): continue
             it = s.get('Item'); n = s.get('NumItems') or 0
             path = it.get('_item') if isinstance(it, dict) else None
-            if path and n: tot[short(path)] = tot.get(short(path), 0)+n
-        return sorted(tot.items(), key=lambda kv: -kv[1])[:6] or None
+            if path and n: tot[short(path)] = tot.get(short(path), 0)+n; used += 1
+        items = sorted(tot.items(), key=lambda kv: -kv[1])[:limit]
+        if slots: return items, used, len(st)
+        return items or None
+
+    def allowed(ci):
+        if ci is None: return None
+        a = [short(x[1]) for x in (P(ci).get('mAllowedItemDescriptors') or []) if isinstance(x, tuple) and x[1].startswith('/Game')]
+        return a or None
 
     classes = []; cidx = {}
     def C(name):
@@ -159,15 +167,35 @@ def main(src, dst):
         if d:
             info['p'] = round(100*(pr.get('mLastProductivityMeasurementProduceDuration') or 0)/d)
         if pr.get('mIsProductionPaused'): info['off'] = 1
+        pot = comp(inst, 'InventoryPotential')
+        if pot is not None:
+            items = dict(inv_summary(pot) or [])
+            if items.get('Desc_CrystalShard_C'): info['sh'] = items['Desc_CrystalShard_C']
+            if items.get('Desc_WAT1_C'): info['sl'] = items['Desc_WAT1_C']
+        pwi = comp(inst, 'powerInfo')
+        if pwi is not None and 'Generator' not in cls:
+            tc = P(pwi).get('mTargetConsumption')
+            if isinstance(tc, float) and tc > 0: info['pw'] = round(tc, 2)
+        if 'mCurrentRecipe' in pr:
+            ii, oi = comp(inst, 'InputInventory'), comp(inst, 'OutputInventory')
+            a, b2 = inv_summary(ii), inv_summary(oi)
+            if a: info['in'] = a
+            if b2: info['out'] = b2
+            aa, ob = allowed(ii), allowed(oi)
+            if aa: info['ia'] = aa
+            if ob: info['oa'] = ob
         if 'Storage' in cls or 'CentralStorage' in cls:
-            s = inv_summary(comp(inst, 'StorageInventory') or comp(inst, 'inventory'))
-            if s: info['i'] = s
+            r3 = inv_summary(comp(inst, 'StorageInventory') or comp(inst, 'inventory'), 24, True)
+            if r3:
+                items, used, total = r3
+                if items: info['i'] = items
+                if total: info['slots'] = [used, total]
         elif 'Generator' in cls:
             pi = comp(inst, 'powerInfo')
             if pi is not None:
                 cap = P(pi).get('mDynamicProductionCapacity') or P(pi).get('mBaseProduction')
                 if cap: info['mw'] = round(cap, 1)
-            s = inv_summary(comp(inst, 'FuelInventory'))
+            s = inv_summary(comp(inst, 'FuelInventory') or comp(inst, 'InputInventory'))
             if s: info['i'] = s
         if 'Miner' in cls or 'Pump' in cls and 'Pipeline' not in cls or 'Fracking' in cls:
             ex = pr.get('mExtractableResource')
