@@ -442,6 +442,10 @@ button.ov-prog{border:1px solid transparent;background:none;border-radius:6px;pa
 .ov-prog .lc-bar{background:var(--line)}
 button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:var(--accent);background:var(--panel-2)}
 .ov-prog span{display:flex;align-items:center;gap:6px}.ov-prog small{grid-column:1/-1;font-size:11px;color:var(--accent)}
+.mpop{position:absolute;z-index:8;display:flex;flex-direction:column;gap:5px;min-width:150px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:8px 9px;font-size:12.5px}
+.mpop b{font-size:13px}.mpop .mp-s{color:#22b14c;font-size:12px}
+.mpop button{border:1px solid var(--line);background:var(--panel-2);color:var(--fg);border-radius:5px;padding:5px 8px;font:inherit;font-size:12.5px;text-align:left;cursor:pointer}
+.mpop button:hover{border-color:var(--fg)}.mpop button.primary{background:#3d8bfd;border-color:#3d8bfd;color:#fff;font-weight:600}
 .lcard.side{position:static;width:auto;max-width:none;box-shadow:none;margin:6px 0 8px;pointer-events:auto}
 .mside-sub{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;font-weight:600}
 .ov-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}.ov-stats div{background:var(--panel-2);border-radius:6px;padding:7px 9px}
@@ -792,7 +796,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     </section>
     <aside class="panel sum" id="sum"></aside>
     <aside class="panel mpal" id="mapPal" aria-label="Map layers and files" hidden></aside>
-    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="lcard" id="mapCard" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
+    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="lcard" id="mapCard" hidden></div><div class="mpop" id="mapPop" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
       <div class="legend mleg">Scroll to zoom · drag to pan · click a node for details · M switches views</div>
       <div class="zoom"><button id="mzOut" aria-label="Zoom out">−</button><span id="mzLbl">100%</span><button id="mzIn" aria-label="Zoom in">+</button><button id="mzFit" class="zfit" title="Fit the whole map">Fit</button></div>
       <input type="file" id="mapImgIn" accept="image/*" multiple hidden><input type="file" id="mapDataIn" accept=".json,.js,application/json,text/javascript" hidden><input type="file" id="mapFmIn" webkitdirectory multiple hidden></section>
@@ -2268,7 +2272,16 @@ const MINE_K='pfm-marked';
 function mineLoad(synced){try{const m=JSON.parse(sessionStorage.getItem(MINE_K)||'null');LIVE.mine=new Set(m&&m.s===synced?m.ids:[])}catch(e){LIVE.mine=new Set()}}
 function mineSave(){try{sessionStorage.setItem(MINE_K,JSON.stringify({s:LIVE.d?LIVE.d.synced:0,ids:[...LIVE.mine]}))}catch(e){}}
 const isFound=id=>LIVE.found.has(id)||LIVE.mine.has(id);
-function mineToggle(id){if(LIVE.found.has(id))return;LIVE.mine.has(id)?LIVE.mine.delete(id):LIVE.mine.add(id);mineSave();mapPalRender();mapSideRender();mapDraw()}
+/* small menu beside a collectible: opened by clicking or right-clicking it */
+function mapPopOpen(o){const fd=isFound(o.id),srv=LIVE.found.has(o.id),pod=o.k==='pod';MAP.pop=o.id;const p=$('#mapPop');
+  p.innerHTML=`<b>${esc(mName(o))}</b>`+(srv?`<span class="mp-s">✓ ${pod?'Looted':'Found'} in the save</span>`:
+    `<button type="button" data-pmine class="${fd?'':'primary'}">${fd?'Unmark':(pod?'Mark as looted':'Mark as found')}</button>`)+
+    `<button type="button" data-pdet>Details</button>`;p.hidden=false;mapPopPlace()}
+function mapPopClose(){MAP.pop=null;$('#mapPop').hidden=true}
+function mapPopPlace(){const p=$('#mapPop');if(!MAP.pop||p.hidden)return;const h=(MAP.hits||[]).find(x=>x.o.id===MAP.pop);
+  if(!h){p.style.visibility='hidden';return}p.style.visibility='';const W=mv.clientWidth;let x=h.x+h.r+8,y=h.y-p.offsetHeight/2;
+  if(x+p.offsetWidth>W-8)x=h.x-h.r-8-p.offsetWidth;p.style.left=Math.max(8,x)+'px';p.style.top=Math.max(8,Math.min(y,mv.clientHeight-p.offsetHeight-8))+'px'}
+function mineToggle(id){if(LIVE.found.has(id))return;LIVE.mine.has(id)?LIVE.mine.delete(id):LIVE.mine.add(id);mineSave();mapPalRender();mapSideRender();if(MAP.pop===id){const o=mapFind(id);if(o)mapPopOpen(o)}mapDraw()}
 if(!MAPF.live)MAPF.live={};MAPF.live={on:true,b:true,f:true,belt:true,pipe:true,wire:true,pl:true,...MAPF.live};if(!MAPF.open)MAPF.open={nodes:true,cols:false,live:false,files:false};
 /* footprints in metres: [local X, local Y]; ports sit on the local-Y ends */
 const LFP={ConstructorMk1:[8,10],SmelterMk1:[6,9],AssemblerMk1:[10,15],FoundryMk1:[10,9],ManufacturerMk1:[18,20],OilRefinery:[10,20],Blender:[18,16],Packager:[8,8],
@@ -2470,7 +2483,7 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
     if(n.k!=='node'&&pin){g.lineWidth=1.5;g.strokeStyle=ink;g.setLineDash([3,2]);g.beginPath();g.arc(c.x,c.y,rn+4,0,7);g.stroke();g.setLineDash([])}
     if(cl[n.id]){g.lineWidth=3;g.strokeStyle=acc;g.beginPath();g.arc(c.x,c.y,rn+(n.k!=='node'?7.5:5),0,7);g.stroke()}
     if(tap.has(n.id))mCheck(g,c.x+rn*.78,c.y-rn*.78,pin?Math.max(5,rn*.42):Math.max(2,rn*.45),pin)});
-  MAP.hits=hits;MAP.rn=rn;
+  MAP.hits=hits;MAP.rn=rn;mapPopPlace();
   liveSloopMarks(g,S2,on);livePlayers(g,S2,on);
   const so=MAP.sel&&mapFind(MAP.sel);if(so){const hh=hits.find(h=>h.o===so),p=hh||S2(so),rr=hh?hh.r:r;g.lineWidth=2.5;g.strokeStyle=ink;g.setLineDash([5,4]);g.beginPath();g.arc(p.x,p.y,rr+8,0,7);g.stroke();g.setLineDash([])}
   $('#mzLbl').textContent=Math.round(MV.z/MV.fz*100)+'%'}
@@ -2494,12 +2507,18 @@ mc.addEventListener('pointermove',e=>{const R=mv.getBoundingClientRect(),cx=e.cl
   const o=mapHit(cx,cy);let l=null;if(o){mapTip(o,cx,cy);liveCardHide()}else{mapTip(null);l=liveHit(cx,cy);if(l)liveCardShow(l,cx,cy,false);else liveCardHide()}
   mc.style.cursor=o||l?'pointer':'';mapCursor(cx,cy)});
 mc.addEventListener('pointerup',e=>{if(!mdrag)return;if(!mdrag.moved){const R=mv.getBoundingClientRect(),cx=e.clientX-R.left,cy=e.clientY-R.top,o=mapHit(cx,cy);MAP.sel=o?o.id:null;
-    const l=!o&&liveHit(cx,cy);LPIN=l||null;$('#mapCard').hidden=true;$('#mapTip').hidden=true;
+    const l=!o&&liveHit(cx,cy);LPIN=l||null;$('#mapCard').hidden=true;$('#mapTip').hidden=true;if(o&&!o.r&&LIVE.d)mapPopOpen(o);else mapPopClose();
     if(o||l){const sd=$('#mapSide');if(innerWidth<=900){sd.classList.add('open');$('#mapPal').classList.remove('open')}}mapSideRender();mapDraw()}
   mdrag=null;mv.classList.remove('panning')});
+mc.addEventListener('contextmenu',e=>{const R=mv.getBoundingClientRect(),o=mapHit(e.clientX-R.left,e.clientY-R.top);
+  if(o&&!o.r&&LIVE.d){e.preventDefault();$('#mapTip').hidden=true;mapPopOpen(o)}});
+$('#mapPop').addEventListener('pointerdown',e=>e.stopPropagation());
+$('#mapPop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!MAP.pop)return;const id=MAP.pop;
+  if('pmine' in b.dataset)mineToggle(id);
+  else if('pdet' in b.dataset){MAP.sel=id;LPIN=null;mapPopClose();if(innerWidth<=900){$('#mapSide').classList.add('open');$('#mapPal').classList.remove('open')}mapSideRender();mapDraw()}});
 mc.addEventListener('pointerleave',()=>{$('#mapTip').hidden=true;liveCardHide();mapCursor(null)});
 $('#mapCard').addEventListener('click',e=>{if(e.target.closest('[data-lclose]'))liveUnpin()});
-document.addEventListener('keydown',e=>{if(mv.hidden)return;if(e.key==='Escape'&&(LPIN||MAP.sel)){MAP.sel=null;liveUnpin()}
+document.addEventListener('keydown',e=>{if(mv.hidden)return;if(e.key==='Escape'&&(LPIN||MAP.sel||MAP.pop)){MAP.sel=null;mapPopClose();liveUnpin()}
   else if((e.key==='f'||e.key==='F')&&!e.target.closest('input,textarea,select')&&MAP.sel){const o=mapFind(MAP.sel);if(o&&!o.r){e.preventDefault();mineToggle(o.id)}}});
 mc.addEventListener('wheel',e=>{e.preventDefault();const R=mv.getBoundingClientRect();mapZoom(Math.exp(-e.deltaY*.0015),e.clientX-R.left,e.clientY-R.top)},{passive:false});
 $('#mzIn').onclick=()=>mapZoom(1.4);$('#mzOut').onclick=()=>mapZoom(1/1.4);$('#mzFit').onclick=mapFit;
