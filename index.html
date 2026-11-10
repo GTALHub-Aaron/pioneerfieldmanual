@@ -446,6 +446,11 @@ button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:va
 .mpop b{font-size:13px}.mpop .mp-s{color:#22b14c;font-size:12px}
 .mpop button{border:1px solid var(--line);background:var(--panel-2);color:var(--fg);border-radius:5px;padding:5px 8px;font:inherit;font-size:12.5px;text-align:left;cursor:pointer}
 .mpop button:hover{border-color:var(--fg)}.mpop button.primary{background:#3d8bfd;border-color:#3d8bfd;color:#fff;font-weight:600}
+.acct.on{border-color:#22b14c;color:#22b14c}
+.authdlg{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);padding:18px 20px;width:min(360px,92vw);box-shadow:var(--shadow)}
+.authdlg::backdrop{background:rgba(0,0,0,.45)}.authdlg h2{font-family:var(--f-display);font-size:20px;margin:0 0 6px}
+.authdlg label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 0}.authdlg input{display:block;width:100%;margin-top:4px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:var(--fg);font:inherit;font-size:14px;box-sizing:border-box}
+.auth-err{color:#e5484d;font-size:12.5px;margin:10px 0 0}.mkv .fimg{width:14px;height:14px;vertical-align:-2px}
 .lcard.side{position:static;width:auto;max-width:none;box-shadow:none;margin:6px 0 8px;pointer-events:auto}
 .mside-sub{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px;font-weight:600}
 .ov-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}.ov-stats div{background:var(--panel-2);border-radius:6px;padding:7px 9px}
@@ -483,7 +488,7 @@ button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:va
 .mpal{padding:4px 14px 16px}
 .flayers{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 4px}
 .flayers .fchip{font-size:11.5px;padding:4px 5px;gap:5px}
-.fsync{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);margin:2px 0 6px}.fsync .linkb{font-size:11.5px;white-space:nowrap}.fsync-run{color:var(--accent);font-weight:600}
+.fsync{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);margin:2px 0 6px}.fsync .linkb{font-size:11.5px;white-space:nowrap}.fsync-run{color:var(--accent);font-weight:600}.fsync .linkb:disabled{opacity:.6;cursor:default}.fsync-msg{font-size:11.5px;margin:-2px 0 6px;color:var(--fg)}
 .mnew{position:absolute;z-index:9;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--accent);border-radius:999px;box-shadow:var(--shadow);padding:5px 6px 5px 14px;font-size:12.5px;white-space:nowrap}
 .mnew button{border:0;border-radius:999px;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:4px 12px;cursor:pointer}
 .fchip{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:6px;padding:4px 7px;font-size:12px;cursor:pointer;user-select:none;min-width:0;background:var(--panel);color:var(--muted)}
@@ -759,7 +764,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
         <button class="btn" id="btnRedo" title="Redo (Ctrl+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button></div>
       <div class="grp sep pmonly"><button class="btn" id="btnIO">Plans</button>
         <button class="btn" id="btnClear">Clear</button></div>
-      <div class="grp sep"><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
+      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button">Sign in</button><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
         <button type="button" class="thsw" id="thSw" role="switch" aria-checked="true" aria-label="Dark mode" title="Switch light / dark"><svg class="ic sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><g stroke-linecap="round"><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g></svg><span class="trk"><span class="knob"></span></span><svg class="ic moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg></button>
         <button class="btn nar" id="tgSum" aria-controls="sum">Totals</button></div>
       <div class="grp sep"><button class="helpb" id="btnHelp" type="button" title="Help (F1)" aria-label="Help">?</button></div>
@@ -988,6 +993,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
   </div>
 </div>
 
+<dialog class="authdlg" id="authDlg"></dialog>
 <script>
 (function(){
 "use strict";
@@ -2267,7 +2273,6 @@ function liveTapped(){const key=(LIVE.d?LIVE.d.synced:0)+'|'+(MAP.data?MAP.data.
   LIVE._tk=key;LIVE.tap=tap;return tap}
 function mIcon(cls){const u=cls&&ICONS[cls];if(!u)return null;let im=ICACHE[u];if(!im){im=ICACHE[u]=new Image();im.onload=()=>mapDraw();im.src=u}return im.complete&&im.naturalWidth?im:null}
 /* ---- live factory layer: buildings, belts, pipes and power lines read from the server save ---- */
-const LIVE_URL='https://raw.githubusercontent.com/GTALHub-Aaron/pioneerfieldmanual/live-data/live.json';
 const LIVE={d:null,at:0,err:'',paths:null,bl:[],pl:[],found:new Set(),mine:new Set()};
 /* collectibles marked found by hand: this browser tab only, cleared when a newer server snapshot arrives */
 const MINE_K='pfm-marked';
@@ -2333,31 +2338,69 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   d.wires.forEach(([a,b,c,e])=>line(P.wire,[a,b,c,e]));
   LIVE.d=d;LIVE.paths=P;LIVE.bl=bl;LIVE.u=u;LIVE.found=new Set(d.found||[]);mineLoad(d.synced);
   LIVE.pl=(d.players||[]).map(p=>{const c=tm(p.x,p.y);return{...p,x:lM(p.x),y:lM(p.y),z:lM(p.z),mx:c.x,my:c.y}});return true}
-/* snapshot updates: ask GitHub which commit live-data points at, and fetch that exact commit's file so
-   the CDN can't hand back a stale copy. A newer snapshot is offered with a notice instead of swapping in
-   under your feet (it would also clear your own found-marks). */
-const LIVE_REPO='GTALHub-Aaron/pioneerfieldmanual',LIVE_RUN_URL=`https://github.com/${LIVE_REPO}/actions/workflows/live-map.yml`;
-async function liveSha(){try{const r=await fetch(`https://api.github.com/repos/${LIVE_REPO}/branches/live-data`,{cache:'no-store'});if(!r.ok)return null;const j=await r.json();return j&&j.commit&&j.commit.sha||null}catch(e){return null}}
-async function liveLoad(){try{const sha=await liveSha();if(sha&&sha===LIVE.sha&&LIVE.d)return;
-    const url=sha?`https://raw.githubusercontent.com/${LIVE_REPO}/${sha}/live.json`:LIVE_URL+'?t='+Math.floor(Date.now()/60000);
-    const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();
-    if(LIVE.d&&d.synced<=LIVE.d.synced){LIVE.sha=sha;return}
-    if(!LIVE.d){LIVE.sha=sha;if(liveIngest(d)){LIVE.err='';LIVE.at=Date.now();mapPalRender();mapSideRender();mapDraw()}}
-    else{LIVE.pending={d,sha};liveBanner()}}
-  catch(e){LIVE.err=String(e.message||e);if(!LIVE.d)mapPalRender()}}
-function liveApply(){const p=LIVE.pending;if(!p)return;LIVE.pending=null;LIVE.sha=p.sha;if(liveIngest(p.d)){LIVE.at=Date.now();MAP.pop=null;$('#mapPop').hidden=true;
+/* ---- GTALHub sign-in: the server layer is only for accounts on the sync-map function's list ---- */
+const SB_URL='https://hjwuluhdiczmssldyeus.supabase.co',SB_KEY='sb_publishable_zAZpo7UDyx1eHD_HpayR-g_RRjdgtO9',LIVE_FN=SB_URL+'/functions/v1/sync-map';
+const LIVE_RUN_URL='https://github.com/GTALHub-Aaron/pioneerfieldmanual/actions/workflows/live-map.yml';
+const AUTH={sb:null,session:null,role:null,status:'out'};  /* status: out | in | noaccess */
+async function authInit(){try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    AUTH.sb=createClient(SB_URL,SB_KEY);const {data}=await AUTH.sb.auth.getSession();AUTH.session=data.session;
+    AUTH.sb.auth.onAuthStateChange((ev,s)=>{const was=AUTH.session&&AUTH.session.user.id;AUTH.session=s;if((s&&s.user.id)!==was)authChanged()})}catch(e){}
+  authChanged()}
+function authChanged(){acctRender();if(AUTH.session){AUTH.status='in';liveLoad()}else{AUTH.status='out';AUTH.role=null;liveClear()}}
+function liveClear(){Object.assign(LIVE,{d:null,paths:null,bl:[],pl:[],found:new Set(),mine:new Set(),pending:null,running:false,syncMsg:'',err:''});LPIN=null;MAP.pop=null;
+  const p=$('#mapPop');if(p)p.hidden=true;liveBanner();mapPalRender();mapSideRender();mapDraw()}
+async function liveFn(what,method='GET'){const s=AUTH.session;if(!s)throw Object.assign(new Error('sign in'),{code:401});
+  const r=await fetch(LIVE_FN+(what?'?what='+what:''),{method,headers:{Authorization:'Bearer '+s.access_token,apikey:SB_KEY},cache:'no-store'});
+  if(r.status===401||r.status===403){AUTH.status=r.status===403?'noaccess':'in';throw Object.assign(new Error(r.status===403?'no access':'sign in'),{code:r.status})}
+  if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+/* a newer snapshot is offered with a notice instead of swapping in under your feet (it also clears your own found-marks) */
+async function liveLoad(){if(!AUTH.session)return;try{const m=await liveFn('meta');AUTH.role=m.role;AUTH.status='in';acctRender();
+    if(!m.synced){LIVE.err='no snapshot yet';mapPalRender();return}
+    if(LIVE.d&&m.synced<=LIVE.d.synced)return;if(LIVE.pending&&m.synced<=LIVE.pending.d.synced)return;
+    const d=await liveFn('live');
+    if(!LIVE.d){if(liveIngest(d)){LIVE.err='';LIVE.at=Date.now();mapPalRender();mapSideRender();mapDraw()}}
+    else{LIVE.pending={d};liveBanner()}}
+  catch(e){LIVE.err=String(e.message||e);if(e.code===403){liveClear();AUTH.status='noaccess'}acctRender();mapPalRender();mapSideRender()}}
+function liveApply(){const p=LIVE.pending;if(!p)return;LIVE.pending=null;if(liveIngest(p.d)){LIVE.at=Date.now();MAP.pop=null;$('#mapPop').hidden=true;
     if(LPIN&&LPIN.b){const o=LPIN.b;LPIN=null;const nb=LIVE.bl.find(b=>b.cls===o.cls&&Math.abs(b.x-o.x)<50&&Math.abs(b.y-o.y)<50);if(nb)LPIN={b:nb}}
     mapPalRender();mapSideRender();mapDraw()}liveBanner()}
 function liveBanner(){const el=$('#mapNew');if(!el)return;const p=LIVE.pending;
   if(!p){el.hidden=true;return}const m=Math.max(0,Math.round((Date.now()/1000-p.d.synced)/60));
   el.innerHTML=`<span>New server snapshot · synced ${m<1?'just now':m+' min ago'}</span><button type="button" data-lnew>Show it</button>`;el.hidden=false}
-/* after "Sync now", look more often for a few minutes and show whether GitHub is running the sync */
+async function liveSyncNow(){LIVE.syncMsg='Starting a sync…';mapPalRender();let j=null;
+  try{j=await liveFn('','POST')}catch(e){}
+  const st=j&&j.status;
+  LIVE.syncMsg=st==='started'?'Sync started. The new snapshot shows up here in about 3 minutes.':st==='running'?'A sync is already running. It will show up here when it finishes.':
+    st==='recent'?`A sync just ran. Try again in ${Math.max(1,Math.round((j.wait||60)/60))} min.`:
+    `Couldn’t start it from here. <a href="${LIVE_RUN_URL}" target="_blank" rel="noopener">Run it on GitHub ↗</a>`;
+  if(st==='started'){LIVE.running=true;LIVE.syncAt=Date.now()}else if(st==='running')LIVE.running=true;mapPalRender();if(st)liveWatch();
+  clearTimeout(LIVE.msgT);LIVE.msgT=setTimeout(()=>{LIVE.syncMsg='';mapPalRender()},st==='started'||st==='running'?4*60000:20000)}
+/* after "Sync now", ask every 30 s for a few minutes whether the sync is still running */
 async function liveWatch(){LIVE.watchUntil=Date.now()+12*60000;if(LIVE.watchT)return;
-  const tick=async()=>{if(Date.now()>LIVE.watchUntil){LIVE.watchT=null;LIVE.running=false;mapPalRender();return}
-    try{const r=await fetch(`https://api.github.com/repos/${LIVE_REPO}/actions/workflows/live-map.yml/runs?per_page=1`,{cache:'no-store'});
-      if(r.ok){const j=await r.json(),run=j.workflow_runs&&j.workflow_runs[0];const was=LIVE.running;LIVE.running=!!run&&run.status!=='completed';
-        if(was!==LIVE.running)mapPalRender();if(was&&!LIVE.running)await liveLoad()}}catch(e){}
-    LIVE.watchT=setTimeout(tick,45000)};tick()}
+  const tick=async()=>{if(Date.now()>LIVE.watchUntil||!AUTH.session){LIVE.watchT=null;LIVE.running=false;mapPalRender();return}
+    try{const j=await liveFn('status');const stale=j.created&&LIVE.syncAt&&Date.parse(j.created)<LIVE.syncAt-20000;
+      if(!stale){const was=LIVE.running;LIVE.running=j.status==='running';
+        if(was!==LIVE.running)mapPalRender();if(was&&!LIVE.running){LIVE.syncMsg='';LIVE.syncAt=0;await liveLoad();mapPalRender()}}}catch(e){}
+    LIVE.watchT=setTimeout(tick,30000)};LIVE.watchT=setTimeout(tick,8000)}
+/* account button in the top bar and the sign-in dialog */
+function acctRender(){const b=$('#btnAcct');if(!b)return;const s=AUTH.session;
+  b.textContent=s?'● '+(s.user.email||'Signed in').split('@')[0]:'Sign in';b.classList.toggle('on',!!s);
+  b.title=s?`Signed in as ${s.user.email}${AUTH.status==='noaccess'?' (no server access)':''}`:'Sign in with your GTALHub account'}
+function authOpen(){const d=$('#authDlg'),s=AUTH.session;
+  d.innerHTML=s?`<form method="dialog"><h2>Account</h2><p class="mstat">Signed in as <b>${esc(s.user.email)}</b>${AUTH.status==='noaccess'?'<br>This account doesn’t have access to the server map.':AUTH.role==='admin'?'<br>Admin':''}</p>
+      <div class="mbtns"><button type="button" class="btn" data-aout>Sign out</button><button class="btn" value="close">Close</button></div></form>`:
+    `<form id="authForm"><h2>Sign in</h2><p class="mstat">Use your GTALHub account, the same one as Weigh-Off.</p>
+      <label>Email<input type="email" name="email" autocomplete="username" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label>
+      <p class="auth-err" hidden></p><div class="mbtns"><button class="btn primary" type="submit">Sign in</button><button class="btn" type="button" data-aclose>Cancel</button></div></form>`;
+  d.showModal();const f=$('#authForm');if(f)f.email.focus()}
+$('#btnAcct').addEventListener('click',authOpen);
+$('#authDlg').addEventListener('click',async e=>{const d=$('#authDlg');if(e.target===d||e.target.closest('[data-aclose]'))d.close();
+  if(e.target.closest('[data-aout]')){d.close();if(AUTH.sb)await AUTH.sb.auth.signOut()}});
+$('#authDlg').addEventListener('submit',async e=>{if(e.target.id!=='authForm')return;e.preventDefault();const f=e.target,er=f.querySelector('.auth-err'),btn=f.querySelector('[type=submit]');
+  if(!AUTH.sb){er.textContent='Sign-in isn’t available right now. Check your connection and reload.';er.hidden=false;return}
+  btn.disabled=true;er.hidden=true;const {error}=await AUTH.sb.auth.signInWithPassword({email:f.email.value.trim(),password:f.password.value});btn.disabled=false;
+  if(error){er.textContent=error.message==='Invalid login credentials'?'That email and password don’t match a GTALHub account.':error.message;er.hidden=false;return}
+  $('#authDlg').close()});
 function liveAgo(){if(!LIVE.d)return'';const m=Math.max(0,Math.round((Date.now()/1000-LIVE.d.synced)/60));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'}
 /* draws in map units: call inside the translated/scaled context */
 function livePaint(g){const P=LIVE.paths;if(!P||!MAPF.live.on)return;const L=MAPF.live,px=1/MV.z,u=LIVE.u;
@@ -2562,10 +2605,13 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
   let h=`<div class="flayers">`+
     chip('data-mf="nodes"',MAPF.nodes,'Nodes','<i class="fic" style="background:'+MPC.Pure+'"></i>')+
     chip('data-mf="cols"',MAPF.cols,'Collectibles','<i class="fic dia" style="background:#a463f2"></i>')+
-    chip('data-ml="on"',L.on,'Factory','<i class="fic sq" style="background:#f39c3d"></i>')+
-    chip('data-ml="pl"',L.pl,'Pioneers','<i class="fic" style="background:#fff;box-shadow:inset 0 0 0 3px #e8541e"></i>')+`</div>`;
-  h+=`<div class="fsync"><span>${LIVE.d?`Server synced ${liveAgo()}`:LIVE.err?'Server snapshot not available yet':'Loading server snapshot…'}${LIVE.running?' · <b class="fsync-run">syncing now…</b>':''}</span>`+
-    `<a class="linkb" href="${LIVE_RUN_URL}" target="_blank" rel="noopener" data-lsync title="Opens GitHub: click “Run workflow”, then “Run workflow” again. Needs access to the repo. Takes about 3 minutes.">Sync now ↗</a></div>`;
+    (LIVE.d?chip('data-ml="on"',L.on,'Factory','<i class="fic sq" style="background:#f39c3d"></i>')+
+    chip('data-ml="pl"',L.pl,'Pioneers','<i class="fic" style="background:#fff;box-shadow:inset 0 0 0 3px #e8541e"></i>'):'')+`</div>`;
+  if(AUTH.session){
+    if(AUTH.status==='noaccess')h+=`<p class="fsync">Signed in, but this account doesn’t have access to the server map.</p>`;
+    else{h+=`<div class="fsync"><span>${LIVE.d?`Server synced ${liveAgo()}`:LIVE.err==='no snapshot yet'?'No server snapshot yet':LIVE.err?'Server snapshot not available right now':'Loading server snapshot…'}${LIVE.running?' · <b class="fsync-run">syncing now…</b>':''}</span>`+
+      `<button type="button" class="linkb" data-lsync${LIVE.running?' disabled':''} title="Pull a fresh snapshot from the server now. Takes about 3 minutes.">${LIVE.running?'Syncing…':'Sync now'}</button></div>`+
+      (LIVE.syncMsg?`<p class="fsync-msg">${LIVE.syncMsg}</p>`:'')}}
   /* nodes */
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{cnt[n.r]=(cnt[n.r]||0)+1});const tap=liveTapped();
     let b=`<div class="mchips" role="group" aria-label="Purity">${['Impure','Normal','Pure'].map(p=>`<button type="button" class="mchip" data-mp="${p}" aria-pressed="${MAPF.pur[p]!==false}" style="--pc:${MPC[p]}">${p}</button>`).join('')}</div>`+
@@ -2593,7 +2639,7 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
     h+=sec('live','Server factory',null,b)}
   if(!D)h+='<p class="empty">No map data loaded yet.</p>';
   /* files */
-  h+=sec('files','Map files',null,`<div class="mstat">${mapStatus()}</div><div class="mbtns">`+
+  if(AUTH.role==='admin'||localPage())h+=sec('files','Map files',null,`<div class="mstat">${mapStatus()}</div><div class="mbtns">`+
     `<button type="button" class="btn" data-mload="fm" title="Pick the folder of JSON files you exported from FModel">Import FModel export…</button>`+
     `<button type="button" class="btn" data-mload="img">Load map picture…</button>`+
     `<button type="button" class="btn" data-mload="data" title="A map-data file this planner saved earlier">Load map data file…</button>`+
@@ -2632,7 +2678,11 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
         `<div class="mside-sub">Upgrades</div><div class="mkv"><span>Power Shards in use</span><b>${sh}</b><span>Somersloops in use</span><b>${sl} <small>in ${slb} buildings</small></b></div>`+
         `<label class="ftog ov-tog"><input type="checkbox" data-ml="sloop"${MAPF.live.sloop?' checked':''}><span>Highlight buildings with Somersloops</span></label>`+
         `<div class="mside-sub">Machines</div><table class="mtab">${Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}</table>`}
-    else h+=`<p class="empty">${LIVE.err?'The server snapshot isn’t available yet.':'Loading the server snapshot…'}</p>`;
+    else if(AUTH.session&&AUTH.status!=='noaccess')h+=`<p class="empty">${LIVE.err?'The server snapshot isn’t available right now.':'Loading the server snapshot…'}</p>`;
+    else if(D){const pc={Impure:0,Normal:0,Pure:0};D.nodes.forEach(n=>{if(pc[n.p]!=null)pc[n.p]++});const ct={};D.cols.forEach(c=>ct[c.k]=(ct[c.k]||0)+1);
+      h+=`<div class="ov-stats"><div><b>${D.nodes.length}</b><span>resource nodes</span></div><div><b>${D.cols.length.toLocaleString()}</b><span>collectibles</span></div></div>`+
+        `<div class="mkv">${['Impure','Normal','Pure'].map(p=>`<span><i class="fic" style="background:${MPC[p]};display:inline-block;margin-right:6px"></i>${p} nodes</span><b>${pc[p]}</b>`).join('')}</div>`+
+        `<div class="mside-sub">Collectibles</div><div class="mkv">${Object.keys(MCOL).filter(k=>ct[k]).map(k=>`<span>${fIco(MCOL[k][2],MCOL[k][1])} ${MCOL[k][0]}</span><b>${ct[k]}</b>`).join('')}</div>`}
     if(D&&D.cols.length&&LIVE.d){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(isFound(c.id))fd[c.k]=(fd[c.k]||0)+1});
       h+=`<div class="mside-sub">Collectibles found</div>`+Object.keys(MCOL).filter(k=>ct[k]).map(k=>{const f=fd[k]||0,p=Math.round(100*f/ct[k]);
         const on=MAPF.focus&&MAPF.focus.k===k;
@@ -2665,7 +2715,7 @@ async function mapBoot(){let img=null,data=null;try{img=await MDB.get('image');d
   if(data)mapSetData(data,false);else{const d=await mapAutoData();if(d)mapSetData(d,true)}
   if(img)await mapSetImg(img,false).catch(()=>{});
   else if(localPage())for(const f of['map.png','map.jpg','map.webp'])if(await probe('icons/'+f)){await mapSetImg('icons/'+f,true).catch(()=>{});break}
-  mapPalRender();mapSideRender();mapEmpty();liveLoad();setInterval(()=>{if(!document.hidden)liveLoad()},2*60000)}
+  mapPalRender();mapSideRender();mapEmpty();authInit();setInterval(()=>{if(!document.hidden)liveLoad()},2*60000)}
 const mapReadText=f=>f.text().then(t=>JSON.parse(t.trim().replace(/^window\.FICSIT_MAP_DATA\s*=\s*/,'').replace(/;\s*$/,'')));
 /* FModel "Save Properties (.json)" output: an array of exports, each {Type, Name, Outer, Properties}.
    Actors point at their root component, which holds RelativeLocation; nodes carry mResourceClass and mPurity. */
@@ -2724,7 +2774,7 @@ $('#mapPal').addEventListener('toggle',e=>{const s=e.target.closest&&e.target.cl
 $('#mapPal').addEventListener('change',e=>{const t=e.target,d=t.dataset;if(MAPF.focus&&(d.mf||d.mc)){MAPF.focus=null;setTimeout(mapSideRender)}if(d.ml){MAPF.live[d.ml]=t.checked;mapSave();if(d.ml==='sloop')mapSideRender();mapDraw();return}
   if(d.mf){MAPF[d.mf]=t.checked}else if(d.mr){MAPF.res[d.mr]=t.checked}else if(d.mc){MAPF.col[d.mc]=t.checked}
   else if(d.mb){const v=parseFloat(t.value);if(!isFinite(v))return;MAPF.b[d.mb]=v;mapPrep()}else return;mapSave();mapDraw()});
-$('#mapPal').addEventListener('click',e=>{if(e.target.closest('[data-lsync]')){liveWatch();return}const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+$('#mapPal').addEventListener('click',e=>{if(e.target.closest('[data-lsync]')){liveSyncNow();return}const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.mp){MAPF.pur[d.mp]=MAPF.pur[d.mp]===false;b.setAttribute('aria-pressed',MAPF.pur[d.mp]!==false)}
   else if(d.mall){new Set((MAP.data?MAP.data.nodes:[]).map(n=>n.r)).forEach(r=>MAPF.res[r]=d.mall==='1');mapPalRender()}
   else if('mbreset' in d){MAPF.b={...MAP_DEF_B};mapPrep();mapPalRender();$('#mapPal .mcal').open=true}else return;mapSave();mapDraw()});
