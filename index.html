@@ -2247,11 +2247,11 @@ function mapZoom(f,cx,cy){const w=mv.clientWidth,h=mv.clientHeight;if(cx==null){
 function mapFocus(id,zoom){const o=mapFind(id);if(!o)return;MAP.sel=id;const w=mv.clientWidth,h=mv.clientHeight;if(!MV.fit)mapFit();
   if(zoom)MV.z=Math.min(mapZMax(),Math.max(MV.z,MV.fz*6));MV.touched=true;MV.x=w/2-o.mx*MV.z;MV.y=h/2-o.my*MV.z;mapSideRender();mapDraw()}
 function mapVis(){const D=MAP.data,cl=mapClaims();if(!D)return{nodes:[],cols:[],cl};
-  const tap=MAPF.hideTapped?liveTapped():null,fd=LIVE.found;
+  const tap=MAPF.hideTapped?liveTapped():null,fd={has:isFound};
   const nodes=MAPF.nodes?D.nodes.filter(n=>MAPF.res[n.r]!==false&&MAPF.pur[n.p]!==false&&!(MAPF.free&&cl[n.id])&&!(tap&&tap.has(n.id))):[];
   const cols=MAPF.cols?D.cols.filter(c=>MAPF.col[c.k]!==false&&(MAPF.showFound!==false||!fd.has(c.id))):[];return{nodes,cols,cl}}
 /* green check badge for tapped nodes and found collectibles */
-function mCheck(g,bx,by,br,pin){g.beginPath();g.arc(bx,by,br+(pin?1.4:.8),0,7);g.fillStyle='#000';g.fill();g.beginPath();g.arc(bx,by,br,0,7);g.fillStyle='#22b14c';g.fill();
+function mCheck(g,bx,by,br,pin,mine){g.beginPath();g.arc(bx,by,br+(pin?1.4:.8),0,7);g.fillStyle='#000';g.fill();g.beginPath();g.arc(bx,by,br,0,7);g.fillStyle=mine?'#3d8bfd':'#22b14c';g.fill();
   if(br>=4){g.lineWidth=Math.max(1.6,br*.32);g.strokeStyle='#fff';g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(bx-br*.48,by+br*.02);g.lineTo(bx-br*.12,by+br*.4);g.lineTo(bx+br*.52,by-br*.36);g.stroke()}}
 const ICACHE={},MDISK='#9a9fa8',MPC={Impure:'#e36b2c',Normal:'#f0b429',Pure:'#43b05c'};
 /* nodes with a miner, extractor or geothermal generator from the server sitting on them */
@@ -2262,7 +2262,13 @@ function liveTapped(){const key=(LIVE.d?LIVE.d.synced:0)+'|'+(MAP.data?MAP.data.
 function mIcon(cls){const u=cls&&ICONS[cls];if(!u)return null;let im=ICACHE[u];if(!im){im=ICACHE[u]=new Image();im.onload=()=>mapDraw();im.src=u}return im.complete&&im.naturalWidth?im:null}
 /* ---- live factory layer: buildings, belts, pipes and power lines read from the server save ---- */
 const LIVE_URL='https://raw.githubusercontent.com/GTALHub-Aaron/pioneerfieldmanual/live-data/live.json';
-const LIVE={d:null,at:0,err:'',paths:null,bl:[],pl:[],found:new Set()};
+const LIVE={d:null,at:0,err:'',paths:null,bl:[],pl:[],found:new Set(),mine:new Set()};
+/* collectibles marked found by hand: this browser tab only, cleared when a newer server snapshot arrives */
+const MINE_K='pfm-marked';
+function mineLoad(synced){try{const m=JSON.parse(sessionStorage.getItem(MINE_K)||'null');LIVE.mine=new Set(m&&m.s===synced?m.ids:[])}catch(e){LIVE.mine=new Set()}}
+function mineSave(){try{sessionStorage.setItem(MINE_K,JSON.stringify({s:LIVE.d?LIVE.d.synced:0,ids:[...LIVE.mine]}))}catch(e){}}
+const isFound=id=>LIVE.found.has(id)||LIVE.mine.has(id);
+function mineToggle(id){if(LIVE.found.has(id))return;LIVE.mine.has(id)?LIVE.mine.delete(id):LIVE.mine.add(id);mineSave();mapPalRender();mapSideRender();mapDraw()}
 if(!MAPF.live)MAPF.live={};MAPF.live={on:true,b:true,f:true,belt:true,pipe:true,wire:true,pl:true,...MAPF.live};if(!MAPF.open)MAPF.open={nodes:true,cols:false,live:false,files:false};
 /* footprints in metres: [local X, local Y]; ports sit on the local-Y ends */
 const LFP={ConstructorMk1:[8,10],SmelterMk1:[6,9],AssemblerMk1:[10,15],FoundryMk1:[10,9],ManufacturerMk1:[18,20],OilRefinery:[10,20],Blender:[18,16],Packager:[8,8],
@@ -2310,7 +2316,7 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   const line=(p,flat)=>{let c=tm(flat[0],flat[1]);p.moveTo(c.x,c.y);for(let i=2;i<flat.length;i+=2){c=tm(flat[i],flat[i+1]);p.lineTo(c.x,c.y)}};
   d.belts.forEach(([t,z,f])=>line(P.belt[Math.min(t,6)],f));d.pipes.forEach(([t,z,f])=>line(P.pipe[t===2?2:1],f));(d.tubes||[]).forEach(([t,z,f])=>line(P.tube,f));
   d.wires.forEach(([a,b,c,e])=>line(P.wire,[a,b,c,e]));
-  LIVE.d=d;LIVE.paths=P;LIVE.bl=bl;LIVE.u=u;LIVE.found=new Set(d.found||[]);
+  LIVE.d=d;LIVE.paths=P;LIVE.bl=bl;LIVE.u=u;LIVE.found=new Set(d.found||[]);mineLoad(d.synced);
   LIVE.pl=(d.players||[]).map(p=>{const c=tm(p.x,p.y);return{...p,x:lM(p.x),y:lM(p.y),z:lM(p.z),mx:c.x,my:c.y}});return true}
 async function liveLoad(){try{const r=await fetch(LIVE_URL+'?t='+Math.floor(Date.now()/60000),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
     const d=await r.json();if(liveIngest(d)){LIVE.err='';LIVE.at=Date.now();mapPalRender();mapSideRender();mapDraw()}}
@@ -2454,7 +2460,7 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
       if(o.k.startsWith('slug')){g.moveTo(0,-s);g.lineTo(s*.72,0);g.lineTo(0,s);g.lineTo(-s*.72,0);g.closePath()}
       else if(o.k==='pod'){g.moveTo(0,-s);g.lineTo(s*.95,s*.8);g.lineTo(-s*.95,s*.8);g.closePath()}else g.arc(0,0,s*.8,0,7);
       g.fill();g.stroke();if(o.k==='mercer'){g.beginPath();g.arc(0,0,s*.32,0,7);g.fillStyle='#fff';g.fill()}}
-    if(LIVE.found.has(o.id))mCheck(g,s*.78,-s*.78,pin?Math.max(4.5,s*.45):Math.max(2,s*.5),pin);
+    if(isFound(o.id))mCheck(g,s*.78,-s*.78,pin?Math.max(4.5,s*.45):Math.max(2,s*.5),pin,!LIVE.found.has(o.id));
     g.restore()});
   vis.forEach(({n,p,c})=>{const im=rn>=7&&mIcon(ITEM_CLS[n.r]),fill=MPC[n.p]||'#888';hits.push({o:n,x:c.x,y:c.y,r:rn+2,dx:p.x,dy:p.y});
     g.beginPath();g.arc(c.x,c.y,rn+1.5,0,7);g.fillStyle='#000';g.fill();
@@ -2476,7 +2482,7 @@ const mM=v=>Math.round(v/100).toLocaleString()+' m',mXY=(x,y)=>`X ${mM(x)} · Y 
 function m2w(cx,cy){const b=MAPF.b,mx=(cx-MV.x)/MV.z,my=(cy-MV.y)/MV.z;return{x:b.x0+mx/MSZ*(b.x1-b.x0),y:b.y0+my/MSZ*(b.y1-b.y0),in:mx>=0&&my>=0&&mx<=MSZ&&my<=mapH()}}
 function mapCursor(cx,cy){const el=$('#mapXY');if(!el)return;if(cx==null){el.hidden=true;return}const w=m2w(cx,cy);el.hidden=!w.in;if(w.in)el.textContent=mXY(w.x,w.y)}
 function mapTip(o,cx,cy){const t=$('#mapTip');if(!o){t.hidden=true;return}const cl=mapClaims()[o.id];
-  t.innerHTML=`<b>${mName(o)}</b>${LIVE.found.has(o.id)?` · <span style="color:#22b14c">✓ ${o.k==='pod'?'looted':'found'}</span>`:''}${o.p?` · <span style="color:var(--${purVar(o.p)})">${o.p}</span>`:''}`+`<br><span class="mcoord">${mXY(o.x,o.y)} · height ${mM(o.z)}</span>`+(cl?`<br><span style="color:var(--accent)">Used by ${cl.length>1?cl.length+' cards':'a card'} in this plan</span>`:'')+(()=>{const b=liveTapped().get(o.id);return b?`<br><span style="color:#22b14c">✓ ${esc(lBName(b.cls))} on this node${b.info.c!=null?' · '+fmt(b.info.c)+'%':''}</span>`:''})();
+  t.innerHTML=`<b>${mName(o)}</b>${isFound(o.id)?` · <span style="color:${LIVE.found.has(o.id)?'#22b14c':'#3d8bfd'}">✓ ${o.k==='pod'?'looted':'found'}${LIVE.found.has(o.id)?'':' (marked by you)'}</span>`:''}${o.p?` · <span style="color:var(--${purVar(o.p)})">${o.p}</span>`:''}`+`<br><span class="mcoord">${mXY(o.x,o.y)} · height ${mM(o.z)}</span>`+(cl?`<br><span style="color:var(--accent)">Used by ${cl.length>1?cl.length+' cards':'a card'} in this plan</span>`:'')+(()=>{const b=liveTapped().get(o.id);return b?`<br><span style="color:#22b14c">✓ ${esc(lBName(b.cls))} on this node${b.info.c!=null?' · '+fmt(b.info.c)+'%':''}</span>`:''})();
   t.hidden=false;t.style.left=Math.max(8,Math.min(cx+14,mv.clientWidth-t.offsetWidth-8))+'px';t.style.top=(cy-t.offsetHeight-12<8?cy+16:cy-t.offsetHeight-12)+'px'}
 function liveTip(l,cx,cy){const t=$('#mapTip');t.innerHTML=liveTipHTML(l);t.hidden=false;
   t.style.left=Math.max(8,Math.min(cx+14,mv.clientWidth-t.offsetWidth-8))+'px';t.style.top=(cy-t.offsetHeight-12<8?cy+16:cy-t.offsetHeight-12)+'px'}
@@ -2493,7 +2499,8 @@ mc.addEventListener('pointerup',e=>{if(!mdrag)return;if(!mdrag.moved){const R=mv
   mdrag=null;mv.classList.remove('panning')});
 mc.addEventListener('pointerleave',()=>{$('#mapTip').hidden=true;liveCardHide();mapCursor(null)});
 $('#mapCard').addEventListener('click',e=>{if(e.target.closest('[data-lclose]'))liveUnpin()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!mv.hidden&&(LPIN||MAP.sel)){MAP.sel=null;liveUnpin()}});
+document.addEventListener('keydown',e=>{if(mv.hidden)return;if(e.key==='Escape'&&(LPIN||MAP.sel)){MAP.sel=null;liveUnpin()}
+  else if((e.key==='f'||e.key==='F')&&!e.target.closest('input,textarea,select')&&MAP.sel){const o=mapFind(MAP.sel);if(o&&!o.r){e.preventDefault();mineToggle(o.id)}}});
 mc.addEventListener('wheel',e=>{e.preventDefault();const R=mv.getBoundingClientRect();mapZoom(Math.exp(-e.deltaY*.0015),e.clientX-R.left,e.clientY-R.top)},{passive:false});
 $('#mzIn').onclick=()=>mapZoom(1.4);$('#mzOut').onclick=()=>mapZoom(1/1.4);$('#mzFit').onclick=mapFit;
 new ResizeObserver(()=>{if(!mv.hidden){if(!MV.fit||!MV.touched)mapFit();else mapDraw()}}).observe(mv);
@@ -2523,7 +2530,7 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
       chk('data-mf="free"',MAPF.free,'Hide nodes this plan uses');
     h+=sec('nodes','Resource nodes',D.nodes.length,b)}
   /* collectibles */
-  if(D&&D.cols.length){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(LIVE.found.has(c.id))fd[c.k]=(fd[c.k]||0)+1});
+  if(D&&D.cols.length){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(isFound(c.id))fd[c.k]=(fd[c.k]||0)+1});
     let b=`<div class="fgrid one">${Object.keys(MCOL).filter(k=>ct[k]).map(k=>chip(`data-mc="${k}"`,MAPF.col[k]!==false,MCOL[k][0],fIco(MCOL[k][2],MCOL[k][1],k.startsWith('slug')?' dia':''),LIVE.d?`${fd[k]||0}/${ct[k]}`:ct[k])).join('')}</div>`+
       chk('data-mf="showFound"',MAPF.showFound!==false,`Show ones we’ve ${'found'}`,`<em>✓</em>`);
     if(LIVE.d)b+=`<p class="fnote">Counts are found / total, from the server save.</p>`;
@@ -2557,12 +2564,14 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
   /* a building or pioneer clicked on the map */
   if(LPIN){h+=`<h2>Details</h2><div class="lcard side">${liveCardHTML(LPIN,true)}</div>`+clr}
   /* a node or collectible */
-  else if(o){const m=v=>Math.round(v/100).toLocaleString(),col=!o.r,fd=LIVE.found.has(o.id);
+  else if(o){const m=v=>Math.round(v/100).toLocaleString(),col=!o.r,srv=LIVE.found.has(o.id),mine=LIVE.mine.has(o.id),fd=srv||mine;
     h+=`<h2>Details</h2><div class="mside-h">${mName(o)}</div><div class="mkv">`+
       (o.p?`<span>Purity</span><b style="color:${MPC[o.p]}">${o.p}</b>`:'')+
-      (col&&LIVE.d?`<span>Status</span><b style="color:${fd?'#22b14c':'var(--muted)'}">${fd?(o.k==='pod'?'✓ Looted':'✓ Found'):(o.k==='pod'?'Not looted yet':'Not found yet')}</b>`:'')+
+      (col&&LIVE.d?`<span>Status</span><b style="color:${srv?'#22b14c':mine?'#3d8bfd':'var(--muted)'}">${fd?(o.k==='pod'?'✓ Looted':'✓ Found')+(mine?' · marked by you':''):(o.k==='pod'?'Not looted yet':'Not found yet')}</b>`:'')+
       `<span>Position</span><span>${m(o.x)}, ${m(o.y)} m · height ${m(o.z)} m</span>`+
       (ORES.includes(o.r)?`<span>Miner output</span><span>${['Mk.1','Mk.2','Mk.3'].map(t=>fmt(EX.miner.tiers[t][0]*PUR[o.p])).join(' / ')} per min at 100%</span>`:'')+`</div>`;
+    if(col&&LIVE.d){h+=srv?`<p class="mstat">The server save shows this one as ${o.k==='pod'?'looted':'found'}.</p>`:
+      `<div class="mbtns"><button type="button" class="btn${mine?'':' primary'}" data-mmine>${mine?'Unmark':'Mark as '+(o.k==='pod'?'looted':'found')}</button></div><p class="mstat">Marks are just for you in this tab. They clear when the next server snapshot comes in, which then shows what’s really been picked up.</p>`}
     const tb=!col&&liveTapped().get(o.id);if(tb)h+=`<div class="mside-sub">On this node</div><div class="lcard side">${liveCardHTML({b:tb},true)}</div>`;
     const cards=cl[o.id]||[];if(cards.length)h+=`<p class="mstat">Used by ${cards.map(c=>`<button type="button" class="linkb" data-mcard="${c.id}">${cardName(c)}</button>`).join(', ')} in this plan.</p>`;
     const sp=o.r&&mSpec(o);if(sp)h+=`<div class="mbtns"><button type="button" class="btn${cards.length?'':' primary'}" data-madd${sp[2]?'':' disabled title="Not unlocked yet in Game progress"'}>${cards.length?'Add another '+sp[1]:'Add '+sp[1]+' to this plan'}</button></div>`;
@@ -2579,11 +2588,11 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
         `<label class="ftog ov-tog"><input type="checkbox" data-ml="sloop"${MAPF.live.sloop?' checked':''}><span>Highlight buildings with Somersloops</span></label>`+
         `<div class="mside-sub">Machines</div><table class="mtab">${Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([n,c])=>`<tr><td>${esc(n)}</td><td>${c}</td></tr>`).join('')}</table>`}
     else h+=`<p class="empty">${LIVE.err?'The server snapshot isn’t available yet.':'Loading the server snapshot…'}</p>`;
-    if(D&&D.cols.length&&LIVE.d){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(LIVE.found.has(c.id))fd[c.k]=(fd[c.k]||0)+1});
+    if(D&&D.cols.length&&LIVE.d){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(isFound(c.id))fd[c.k]=(fd[c.k]||0)+1});
       h+=`<div class="mside-sub">Collectibles found</div>`+Object.keys(MCOL).filter(k=>ct[k]).map(k=>{const f=fd[k]||0,p=Math.round(100*f/ct[k]);
         const on=MAPF.focus&&MAPF.focus.k===k;
         return`<button type="button" class="ov-prog${on?' on':''}" data-mfocus="${k}" title="${on?'Back to the normal view':'Show only the ones not found yet'}"><span>${fIco(MCOL[k][2],MCOL[k][1])}${MCOL[k][0]}</span><em>${f} / ${ct[k]}</em><div class="lc-bar"><i style="width:${p}%;background:${MCOL[k][1]}"></i></div>${on?`<small>Showing the ${ct[k]-f} not ${k==='pod'?'looted':'found'} yet · click to go back</small>`:''}</button>`}).join('')+
-        `<p class="note" style="margin-top:4px">Click a row to show only the ones still out there.</p>`}
+        `<p class="note" style="margin-top:4px">Click a row to show only the ones still out there.${LIVE.mine.size?` <span style="color:#3d8bfd">${LIVE.mine.size} marked by you</span> (blue check).`:''}</p>`}
     h+=`<p class="note">Click a building, node or collectible on the map to see its details here.</p>`}
   $('#mapSide').innerHTML=h}
 function mapEmpty(){const e=$('#mapEmpty');if(MAP.img||MAP.data||MAP.tiles){e.hidden=true;return}e.hidden=false;
@@ -2678,7 +2687,8 @@ $('#mapSide').addEventListener('click',e=>{const b=e.target.closest('button');if
   if('madd' in b.dataset){const o=mapFind(MAP.sel);if(o)mapAdd(o)}
   else if(b.dataset.mcard){showCard(+b.dataset.mcard)}
   else if('mclr' in b.dataset){MAP.sel=null;LPIN=null;mapSideRender();mapDraw()}
-  else if(b.dataset.mfocus)mapFocusCol(b.dataset.mfocus)});
+  else if(b.dataset.mfocus)mapFocusCol(b.dataset.mfocus)
+  else if('mmine' in b.dataset&&MAP.sel)mineToggle(MAP.sel)});
 /* show only the not-yet-found collectibles of one kind; click again to restore the previous filters */
 function mapFocusCol(k){const F=MAPF.focus;
   if(F){MAPF.nodes=F.prev.nodes;MAPF.cols=F.prev.cols;MAPF.col=F.prev.col;MAPF.showFound=F.prev.showFound;MAPF.focus=null}
