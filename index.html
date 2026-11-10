@@ -483,7 +483,9 @@ button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:va
 .mpal{padding:4px 14px 16px}
 .flayers{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 4px}
 .flayers .fchip{font-size:11.5px;padding:4px 5px;gap:5px}
-.fsync{font-size:11.5px;color:var(--muted);margin:2px 0 6px}
+.fsync{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);margin:2px 0 6px}.fsync .linkb{font-size:11.5px;white-space:nowrap}.fsync-run{color:var(--accent);font-weight:600}
+.mnew{position:absolute;z-index:9;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--accent);border-radius:999px;box-shadow:var(--shadow);padding:5px 6px 5px 14px;font-size:12.5px;white-space:nowrap}
+.mnew button{border:0;border-radius:999px;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:4px 12px;cursor:pointer}
 .fchip{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:6px;padding:4px 7px;font-size:12px;cursor:pointer;user-select:none;min-width:0;background:var(--panel);color:var(--muted)}
 .fchip input{position:absolute;opacity:0;pointer-events:none}
 .fchip span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -796,7 +798,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     </section>
     <aside class="panel sum" id="sum"></aside>
     <aside class="panel mpal" id="mapPal" aria-label="Map layers and files" hidden></aside>
-    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="lcard" id="mapCard" hidden></div><div class="mpop" id="mapPop" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
+    <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="lcard" id="mapCard" hidden></div><div class="mpop" id="mapPop" hidden></div><div class="mnew" id="mapNew" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
       <div class="legend mleg">Scroll to zoom · drag to pan · click a node for details · M switches views</div>
       <div class="zoom"><button id="mzOut" aria-label="Zoom out">−</button><span id="mzLbl">100%</span><button id="mzIn" aria-label="Zoom in">+</button><button id="mzFit" class="zfit" title="Fit the whole map">Fit</button></div>
       <input type="file" id="mapImgIn" accept="image/*" multiple hidden><input type="file" id="mapDataIn" accept=".json,.js,application/json,text/javascript" hidden><input type="file" id="mapFmIn" webkitdirectory multiple hidden></section>
@@ -2331,9 +2333,31 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   d.wires.forEach(([a,b,c,e])=>line(P.wire,[a,b,c,e]));
   LIVE.d=d;LIVE.paths=P;LIVE.bl=bl;LIVE.u=u;LIVE.found=new Set(d.found||[]);mineLoad(d.synced);
   LIVE.pl=(d.players||[]).map(p=>{const c=tm(p.x,p.y);return{...p,x:lM(p.x),y:lM(p.y),z:lM(p.z),mx:c.x,my:c.y}});return true}
-async function liveLoad(){try{const r=await fetch(LIVE_URL+'?t='+Math.floor(Date.now()/60000),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
-    const d=await r.json();if(liveIngest(d)){LIVE.err='';LIVE.at=Date.now();mapPalRender();mapSideRender();mapDraw()}}
+/* snapshot updates: ask GitHub which commit live-data points at, and fetch that exact commit's file so
+   the CDN can't hand back a stale copy. A newer snapshot is offered with a notice instead of swapping in
+   under your feet (it would also clear your own found-marks). */
+const LIVE_REPO='GTALHub-Aaron/pioneerfieldmanual',LIVE_RUN_URL=`https://github.com/${LIVE_REPO}/actions/workflows/live-map.yml`;
+async function liveSha(){try{const r=await fetch(`https://api.github.com/repos/${LIVE_REPO}/branches/live-data`,{cache:'no-store'});if(!r.ok)return null;const j=await r.json();return j&&j.commit&&j.commit.sha||null}catch(e){return null}}
+async function liveLoad(){try{const sha=await liveSha();if(sha&&sha===LIVE.sha&&LIVE.d)return;
+    const url=sha?`https://raw.githubusercontent.com/${LIVE_REPO}/${sha}/live.json`:LIVE_URL+'?t='+Math.floor(Date.now()/60000);
+    const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const d=await r.json();
+    if(LIVE.d&&d.synced<=LIVE.d.synced){LIVE.sha=sha;return}
+    if(!LIVE.d){LIVE.sha=sha;if(liveIngest(d)){LIVE.err='';LIVE.at=Date.now();mapPalRender();mapSideRender();mapDraw()}}
+    else{LIVE.pending={d,sha};liveBanner()}}
   catch(e){LIVE.err=String(e.message||e);if(!LIVE.d)mapPalRender()}}
+function liveApply(){const p=LIVE.pending;if(!p)return;LIVE.pending=null;LIVE.sha=p.sha;if(liveIngest(p.d)){LIVE.at=Date.now();MAP.pop=null;$('#mapPop').hidden=true;
+    if(LPIN&&LPIN.b){const o=LPIN.b;LPIN=null;const nb=LIVE.bl.find(b=>b.cls===o.cls&&Math.abs(b.x-o.x)<50&&Math.abs(b.y-o.y)<50);if(nb)LPIN={b:nb}}
+    mapPalRender();mapSideRender();mapDraw()}liveBanner()}
+function liveBanner(){const el=$('#mapNew');if(!el)return;const p=LIVE.pending;
+  if(!p){el.hidden=true;return}const m=Math.max(0,Math.round((Date.now()/1000-p.d.synced)/60));
+  el.innerHTML=`<span>New server snapshot · synced ${m<1?'just now':m+' min ago'}</span><button type="button" data-lnew>Show it</button>`;el.hidden=false}
+/* after "Sync now", look more often for a few minutes and show whether GitHub is running the sync */
+async function liveWatch(){LIVE.watchUntil=Date.now()+12*60000;if(LIVE.watchT)return;
+  const tick=async()=>{if(Date.now()>LIVE.watchUntil){LIVE.watchT=null;LIVE.running=false;mapPalRender();return}
+    try{const r=await fetch(`https://api.github.com/repos/${LIVE_REPO}/actions/workflows/live-map.yml/runs?per_page=1`,{cache:'no-store'});
+      if(r.ok){const j=await r.json(),run=j.workflow_runs&&j.workflow_runs[0];const was=LIVE.running;LIVE.running=!!run&&run.status!=='completed';
+        if(was!==LIVE.running)mapPalRender();if(was&&!LIVE.running)await liveLoad()}}catch(e){}
+    LIVE.watchT=setTimeout(tick,45000)};tick()}
 function liveAgo(){if(!LIVE.d)return'';const m=Math.max(0,Math.round((Date.now()/1000-LIVE.d.synced)/60));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'}
 /* draws in map units: call inside the translated/scaled context */
 function livePaint(g){const P=LIVE.paths;if(!P||!MAPF.live.on)return;const L=MAPF.live,px=1/MV.z,u=LIVE.u;
@@ -2513,6 +2537,7 @@ mc.addEventListener('pointerup',e=>{if(!mdrag)return;if(!mdrag.moved){const R=mv
 mc.addEventListener('contextmenu',e=>{const R=mv.getBoundingClientRect(),o=mapHit(e.clientX-R.left,e.clientY-R.top);
   if(o&&!o.r&&LIVE.d){e.preventDefault();$('#mapTip').hidden=true;mapPopOpen(o)}});
 $('#mapPop').addEventListener('pointerdown',e=>e.stopPropagation());
+$('#mapNew').addEventListener('click',e=>{if(e.target.closest('[data-lnew]'))liveApply()});
 $('#mapPop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!MAP.pop)return;const id=MAP.pop;
   if('pmine' in b.dataset)mineToggle(id);
   else if('pdet' in b.dataset){MAP.sel=id;LPIN=null;mapPopClose();if(innerWidth<=900){$('#mapSide').classList.add('open');$('#mapPal').classList.remove('open')}mapSideRender();mapDraw()}});
@@ -2539,7 +2564,8 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
     chip('data-mf="cols"',MAPF.cols,'Collectibles','<i class="fic dia" style="background:#a463f2"></i>')+
     chip('data-ml="on"',L.on,'Factory','<i class="fic sq" style="background:#f39c3d"></i>')+
     chip('data-ml="pl"',L.pl,'Pioneers','<i class="fic" style="background:#fff;box-shadow:inset 0 0 0 3px #e8541e"></i>')+`</div>`;
-  if(LIVE.d)h+=`<p class="fsync">Server synced ${liveAgo()}</p>`;else h+=`<p class="fsync">${LIVE.err?'Server snapshot not available yet':'Loading server snapshot…'}</p>`;
+  h+=`<div class="fsync"><span>${LIVE.d?`Server synced ${liveAgo()}`:LIVE.err?'Server snapshot not available yet':'Loading server snapshot…'}${LIVE.running?' · <b class="fsync-run">syncing now…</b>':''}</span>`+
+    `<a class="linkb" href="${LIVE_RUN_URL}" target="_blank" rel="noopener" data-lsync title="Opens GitHub: click “Run workflow”, then “Run workflow” again. Needs access to the repo. Takes about 3 minutes.">Sync now ↗</a></div>`;
   /* nodes */
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{cnt[n.r]=(cnt[n.r]||0)+1});const tap=liveTapped();
     let b=`<div class="mchips" role="group" aria-label="Purity">${['Impure','Normal','Pure'].map(p=>`<button type="button" class="mchip" data-mp="${p}" aria-pressed="${MAPF.pur[p]!==false}" style="--pc:${MPC[p]}">${p}</button>`).join('')}</div>`+
@@ -2698,7 +2724,7 @@ $('#mapPal').addEventListener('toggle',e=>{const s=e.target.closest&&e.target.cl
 $('#mapPal').addEventListener('change',e=>{const t=e.target,d=t.dataset;if(MAPF.focus&&(d.mf||d.mc)){MAPF.focus=null;setTimeout(mapSideRender)}if(d.ml){MAPF.live[d.ml]=t.checked;mapSave();if(d.ml==='sloop')mapSideRender();mapDraw();return}
   if(d.mf){MAPF[d.mf]=t.checked}else if(d.mr){MAPF.res[d.mr]=t.checked}else if(d.mc){MAPF.col[d.mc]=t.checked}
   else if(d.mb){const v=parseFloat(t.value);if(!isFinite(v))return;MAPF.b[d.mb]=v;mapPrep()}else return;mapSave();mapDraw()});
-$('#mapPal').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+$('#mapPal').addEventListener('click',e=>{if(e.target.closest('[data-lsync]')){liveWatch();return}const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.mp){MAPF.pur[d.mp]=MAPF.pur[d.mp]===false;b.setAttribute('aria-pressed',MAPF.pur[d.mp]!==false)}
   else if(d.mall){new Set((MAP.data?MAP.data.nodes:[]).map(n=>n.r)).forEach(r=>MAPF.res[r]=d.mall==='1');mapPalRender()}
   else if('mbreset' in d){MAPF.b={...MAP_DEF_B};mapPrep();mapPalRender();$('#mapPal .mcal').open=true}else return;mapSave();mapDraw()});
