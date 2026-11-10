@@ -525,6 +525,7 @@ button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:va
 .mcalg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
 .mcalg label{display:flex;flex-direction:column;font-size:11px;color:var(--muted);gap:2px}
 .mcalg input{background:var(--field);border:1px solid var(--line);border-radius:3px;padding:3px 5px;font-family:var(--f-mono);font-size:11.5px;min-width:0}
+.mthumb{display:flex;align-items:center;justify-content:center;height:150px;margin:4px 0 10px;border:1px solid var(--line);border-radius:10px;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--c) 22%,transparent),transparent 70%),var(--panel2,rgba(127,127,127,.06))}.mthumb img{width:128px;height:128px;object-fit:contain;filter:drop-shadow(0 3px 6px rgba(0,0,0,.35))}
 .mside-h{font-family:var(--f-display);font-size:20px;font-weight:600;margin:2px 0 6px}
 .mkv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:12.5px}.mkv span:nth-child(odd){color:var(--muted)}
 .msum .linkb{align-self:auto}
@@ -2655,10 +2656,11 @@ const mSpec=o=>o.k==='geyser'?['gen:geo','Geothermal Generator',!!UNL.gens.geo]:
 function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClaims();let h='';
   const clr=`<button type="button" class="linkb" data-mclr>Clear selection</button>`;
   /* a building or pioneer clicked on the map */
-  if(LPIN){h+=`<h2>Details</h2><div class="lcard side">${liveCardHTML(LPIN,true)}</div>`+clr}
+  const thumb=(c,col)=>c&&ICONS[c]?`<div class="mthumb" style="--c:${col||'var(--line)'}"><img src="${ICONS[c]}" alt=""></div>`:'';
+  if(LPIN){h+=`<h2>Details</h2>`+(LPIN.b?thumb(lBldDesc(LPIN.b),LPIN.b.cat&&LPIN.b.cat[2]):'')+`<div class="lcard side">${liveCardHTML(LPIN,true)}</div>`+clr}
   /* a node or collectible */
   else if(o){const m=v=>Math.round(v/100).toLocaleString(),col=!o.r,srv=LIVE.found.has(o.id),mine=LIVE.mine.has(o.id),fd=srv||mine;
-    h+=`<h2>Details</h2><div class="mside-h">${mName(o)}</div><div class="mkv">`+
+    h+=`<h2>Details</h2>`+thumb(col?(MCOL[o.k]||[])[2]:ITEM_CLS[o.r],col?(MCOL[o.k]||[])[1]:MPC[o.p])+`<div class="mside-h">${mName(o)}</div><div class="mkv">`+
       (o.p?`<span>Purity</span><b style="color:${MPC[o.p]}">${o.p}</b>`:'')+
       (col&&LIVE.d?`<span>Status</span><b style="color:${srv?'#22b14c':mine?'#3d8bfd':'var(--muted)'}">${fd?(o.k==='pod'?'✓ Looted':'✓ Found')+(mine?' · marked by you':''):(o.k==='pod'?'Not looted yet':'Not found yet')}</b>`:'')+
       `<span>Position</span><span>${m(o.x)}, ${m(o.y)} m · height ${m(o.z)} m</span>`+
