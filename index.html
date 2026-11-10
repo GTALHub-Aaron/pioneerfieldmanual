@@ -2398,19 +2398,21 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
   const {nodes,cols,cl}=mapVis(),r=Math.max(4.5,Math.min(14,3+(MV.z/MV.fz)*1.6));MAP.r=r;
   const S2=o=>({x:MV.x+o.mx*MV.z,y:MV.y+o.my*MV.z}),on=p=>p.x>-24&&p.y>-24&&p.x<w+24&&p.y<h+24;
   const pc={Impure:cssv('--lv0'),Normal:cssv('--lv2'),Pure:cssv('--lv3')},ink=cssv('--fg'),acc=cssv('--accent');
-  cols.forEach(c=>{const p=S2(c);if(!on(p))return;const [,col,cls]=MCOL[c.k],s=r*.85,im=s>=8&&mIcon(cls);g.save();g.translate(p.x,p.y);
-    if(im){g.beginPath();g.arc(0,0,s+1.5,0,7);g.fillStyle=MDISK;g.fill();g.lineWidth=1.6;g.strokeStyle='#000';g.stroke();g.drawImage(im,-s*.78,-s*.78,s*1.56,s*1.56)}
-    else{g.fillStyle=col;g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=1.2;g.beginPath();
-      if(c.k.startsWith('slug')){g.moveTo(0,-s);g.lineTo(s*.72,0);g.lineTo(0,s);g.lineTo(-s*.72,0);g.closePath()}
-      else if(c.k==='pod'){g.moveTo(0,-s);g.lineTo(s*.95,s*.8);g.lineTo(-s*.95,s*.8);g.closePath()}else g.arc(0,0,s*.8,0,7);
-      g.fill();g.stroke();if(c.k==='mercer'){g.beginPath();g.arc(0,0,s*.32,0,7);g.fillStyle='#fff';g.fill()}}
-    g.restore()});
   const tap=liveTapped();
   /* zoomed in: each node is a big purity-coloured badge on a leader line, the dot marks the exact spot */
   const zr=MV.z/MV.fz,pin=zr>=2,rn=pin?Math.max(10,Math.min(19,8+zr*.7)):r,hits=[];
-  cols.forEach(c=>{const p=S2(c);if(on(p))hits.push({o:c,x:p.x,y:p.y,r:r*.85+2})});
+  const rc=pin?rn*.8:r*.85;
+  const cvis=cols.map(o=>{const p=S2(o);return on(p)&&{o,p,c:pin?{x:p.x-rc*.8,y:p.y-rc*2}:p}}).filter(Boolean).sort((a,b)=>a.p.y-b.p.y);
   const vis=nodes.map(n=>{const p=S2(n);return on(p)&&{n,p,c:pin?{x:p.x-rn*.8,y:p.y-rn*2}:p}}).filter(Boolean).sort((a,b)=>a.p.y-b.p.y);
-  if(pin){g.strokeStyle='#000';g.fillStyle='#000';g.lineWidth=2;vis.forEach(({p,c})=>{g.beginPath();g.moveTo(c.x,c.y);g.lineTo(p.x,p.y);g.stroke();g.beginPath();g.arc(p.x,p.y,3,0,7);g.fill()})}
+  if(pin){g.strokeStyle='#000';g.fillStyle='#000';g.lineWidth=2;[...cvis,...vis].forEach(({p,c})=>{g.beginPath();g.moveTo(c.x,c.y);g.lineTo(p.x,p.y);g.stroke();g.beginPath();g.arc(p.x,p.y,3,0,7);g.fill()})}
+  cvis.forEach(({o,p,c})=>{const [,col,cls]=MCOL[o.k],s=rc,im=s>=7&&mIcon(cls);hits.push({o,x:c.x,y:c.y,r:s+2,dx:pin?p.x:null,dy:p.y});g.save();g.translate(c.x,c.y);
+    if(im||pin){const rw=Math.max(1.5,s*.2);g.beginPath();g.arc(0,0,s+rw/2+1.2,0,7);g.fillStyle='#000';g.fill();g.beginPath();g.arc(0,0,s,0,7);g.fillStyle=MDISK;g.fill();
+      g.lineWidth=rw;g.strokeStyle=col;g.stroke();if(im)g.drawImage(im,-s*.72,-s*.72,s*1.44,s*1.44);else{g.beginPath();g.arc(0,0,s*.42,0,7);g.fillStyle=col;g.fill()}}
+    else{g.fillStyle=col;g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=1.2;g.beginPath();
+      if(o.k.startsWith('slug')){g.moveTo(0,-s);g.lineTo(s*.72,0);g.lineTo(0,s);g.lineTo(-s*.72,0);g.closePath()}
+      else if(o.k==='pod'){g.moveTo(0,-s);g.lineTo(s*.95,s*.8);g.lineTo(-s*.95,s*.8);g.closePath()}else g.arc(0,0,s*.8,0,7);
+      g.fill();g.stroke();if(o.k==='mercer'){g.beginPath();g.arc(0,0,s*.32,0,7);g.fillStyle='#fff';g.fill()}}
+    g.restore()});
   vis.forEach(({n,p,c})=>{const im=rn>=7&&mIcon(ITEM_CLS[n.r]),fill=MPC[n.p]||'#888';hits.push({o:n,x:c.x,y:c.y,r:rn+2,dx:p.x,dy:p.y});
     g.beginPath();g.arc(c.x,c.y,rn+1.5,0,7);g.fillStyle='#000';g.fill();
     g.beginPath();g.arc(c.x,c.y,rn-.5,0,7);g.fillStyle=fill;g.fill();
