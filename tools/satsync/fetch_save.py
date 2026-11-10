@@ -13,7 +13,7 @@ def g(o, k, default=None):
         if isinstance(o, dict) and key in o: return o[key]
     return default
 
-def call(host, token, function, data=None, raw=False):
+def call(host, token, function, data=None, raw=False, soft=False):
     body = json.dumps({'function': function, 'data': data or {}}).encode()
     headers = {'Content-Type': 'application/json'}
     if token: headers['Authorization'] = 'Bearer ' + token
@@ -43,7 +43,15 @@ def main(out):
     if not host or not (token or pw):
         sys.exit('SF_HOST and either SF_TOKEN or SF_ADMIN_PASSWORD must be set')
     if not token:
-        d = call(host, None, 'PasswordLogin', {'MinimumPrivilegeLevel': 'Administrator', 'Password': pw})
+        # a pasted secret often picks up a stray space or line break, so try the trimmed version too
+        tries = [pw] + ([pw.strip()] if pw.strip() != pw else [])
+        for i, p in enumerate(tries):
+            try:
+                d = call(host, None, 'PasswordLogin', {'MinimumPrivilegeLevel': 'Administrator', 'Password': p}, soft=True)
+            except SystemExit:
+                if i == len(tries)-1: raise
+                continue
+            break
         token = g(d, 'authenticationToken')
         if not token:
             sys.exit(f'admin password login returned no token (fields: {sorted(d) if isinstance(d, dict) else d!r})')
