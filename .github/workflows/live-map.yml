@@ -23,6 +23,7 @@ jobs:
         env:
           SF_HOST: ${{ secrets.SF_HOST }}
           SF_TOKEN: ${{ secrets.SF_TOKEN }}
+          SF_ADMIN_PASSWORD: ${{ secrets.SF_ADMIN_PASSWORD }}
         run: python tools/satsync/fetch_save.py "$RUNNER_TEMP/server.sav"
       - name: Build the map layer
         run: |
