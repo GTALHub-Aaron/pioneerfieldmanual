@@ -1,0 +1,41 @@
+name: Live map sync
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: live-map
+  cancel-in-progress: false
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools/satsync
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download the newest save from the server
+        env:
+          SF_HOST: ${{ secrets.SF_HOST }}
+          SF_TOKEN: ${{ secrets.SF_TOKEN }}
+        run: python tools/satsync/fetch_save.py "$RUNNER_TEMP/server.sav"
+      - name: Build the map layer
+        run: |
+          mkdir -p out
+          python tools/satsync/extract.py "$RUNNER_TEMP/server.sav" out/live.json
+      - name: Publish to the live-data branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          git init -q -b live-data
+          git config user.name "live-map-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add live.json
+          git commit -q -m "Live map $(date -u +%FT%TZ)"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" live-data
