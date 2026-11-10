@@ -2623,19 +2623,21 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
   /* collectibles */
   if(D&&D.cols.length){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(isFound(c.id))fd[c.k]=(fd[c.k]||0)+1});
     let b=`<div class="fgrid one">${Object.keys(MCOL).filter(k=>ct[k]).map(k=>chip(`data-mc="${k}"`,MAPF.col[k]!==false,MCOL[k][0],fIco(MCOL[k][2],MCOL[k][1],k.startsWith('slug')?' dia':''),LIVE.d?`${fd[k]||0}/${ct[k]}`:ct[k])).join('')}</div>`+
+      `<div class="mlinks"><button type="button" class="linkb" data-mcall="1">All</button><button type="button" class="linkb" data-mcall="0">None</button></div>`+
       chk('data-mf="showFound"',MAPF.showFound!==false,`Show ones we’ve ${'found'}`,`<em>✓</em>`);
     if(LIVE.d)b+=`<p class="fnote">Counts are found / total, from the server save.</p>`;
     h+=sec('cols','Collectibles',D.cols.length,b)}
   /* server factory */
   if(LIVE.d){const d=LIVE.d,ct={};LIVE.bl.forEach(b=>ct[b.cat[0]]=(ct[b.cat[0]]||0)+1);
     let b=`<div class="fgrid">`+chip('data-ml="b"',L.b,'Buildings',`<i class="fic sq" style="background:#f39c3d"></i>`)+
-      chip('data-ml="f"',L.f,'Foundations',`<i class="fic sq" style="background:#3a404c"></i>`)+
+      chip('data-ml="f"',L.f,'Floors',`<i class="fic sq" style="background:#3a404c"></i>`)+
       chip('data-ml="belt"',L.belt,'Belts',`<i class="fic" style="background:${LBELT[5]}"></i>`)+
       chip('data-ml="pipe"',L.pipe,'Pipes',`<i class="fic" style="background:${LPIPE[2]}"></i>`)+
       chip('data-ml="wire"',L.wire,'Power lines',`<i class="fic" style="background:#ffe25c"></i>`)+`</div>`+
+      `<div class="mlinks"><button type="button" class="linkb" data-mlall="1">All</button><button type="button" class="linkb" data-mlall="0">None</button></div>`+
       chk('data-ml="sloop"',L.sloop,'Highlight buildings with Somersloops',`<em style="color:#ff5fa8">${LIVE.bl.filter(b=>b.info.sl).length}</em>`)+
       `<div class="mlegend">${LCAT.filter(c=>ct[c[0]]).map(c=>`<span><i style="background:${c[2]}"></i>${c[1]}</span>`).join('')}</div>`+
-      `<p class="fnote">From the Indifferent Broccoli server. Hover a building for details, click to pin.</p>`;
+      `<p class="fnote">From the Indifferent Broccoli server. Hover a building for a quick look, click it for details.</p>`;
     h+=sec('live','Server factory',null,b)}
   if(!D)h+='<p class="empty">No map data loaded yet.</p>';
   /* files */
@@ -2777,6 +2779,8 @@ $('#mapPal').addEventListener('change',e=>{const t=e.target,d=t.dataset;if(MAPF.
 $('#mapPal').addEventListener('click',e=>{if(e.target.closest('[data-lsync]')){liveSyncNow();return}const b=e.target.closest('button');if(!b)return;const d=b.dataset;
   if(d.mp){MAPF.pur[d.mp]=MAPF.pur[d.mp]===false;b.setAttribute('aria-pressed',MAPF.pur[d.mp]!==false)}
   else if(d.mall){new Set((MAP.data?MAP.data.nodes:[]).map(n=>n.r)).forEach(r=>MAPF.res[r]=d.mall==='1');mapPalRender()}
+  else if(d.mcall){Object.keys(MCOL).forEach(k=>MAPF.col[k]=d.mcall==='1');if(d.mcall==='1')MAPF.cols=true;MAPF.focus=null;mapPalRender();mapSideRender()}
+  else if(d.mlall){['b','f','belt','pipe','wire'].forEach(k=>MAPF.live[k]=d.mlall==='1');if(d.mlall==='1')MAPF.live.on=true;mapPalRender()}
   else if('mbreset' in d){MAPF.b={...MAP_DEF_B};mapPrep();mapPalRender();$('#mapPal .mcal').open=true}else return;mapSave();mapDraw()});
 $('#mapSide').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if('madd' in b.dataset){const o=mapFind(MAP.sel);if(o)mapAdd(o)}
