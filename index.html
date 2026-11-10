@@ -2223,7 +2223,7 @@ const MDB={open(){return new Promise((res,rej)=>{try{const r=indexedDB.open('fic
 const MAPK=KEY+'-map',MSZ=4096;
 /* world units at the edges of the in-game map picture; adjustable under "Line up the map" */
 const MAP_DEF_B={x0:-324698.832,x1:425301.832,y0:-375000,y1:375000};
-let MAPF={res:{},pur:{Impure:true,Normal:true,Pure:true},col:{},nodes:true,cols:true,free:false,b:{...MAP_DEF_B}};
+let MAPF={res:{},pur:{Impure:true,Normal:true,Pure:true},col:{},nodes:true,cols:true,caves:true,free:false,b:{...MAP_DEF_B}};
 try{const f=JSON.parse(localStorage.getItem(MAPK)||'null');if(f)MAPF={...MAPF,...f,res:{...(f.res||{})},col:{...(f.col||{})},pur:{...MAPF.pur,...(f.pur||{})},b:{...MAP_DEF_B,...(f.b||{})}}}catch(e){}
 const mapSave=()=>{try{localStorage.setItem(MAPK,JSON.stringify(MAPF))}catch(e){}};
 const MRES={'Iron Ore':'#9fb0c2','Copper Ore':'#e07b3c','Limestone':'#d8cfae','Coal':'#4a4a4a','Caterium Ore':'#e8b923','Raw Quartz':'#f08fc8','Sulfur':'#e6e04a','Bauxite':'#c0582c','Uranium':'#4fd44f','SAM':'#a15fe0','Crude Oil':'#3b2a1e','Nitrogen Gas':'#a9dcec','Water':'#3aa5e6','Geyser':'#ff5a36'};
@@ -2523,7 +2523,7 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
   else if(MAP.img){g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.globalAlpha=mapImgAlpha();g.drawImage(MAP.img,0,0,MSZ,H);g.globalAlpha=1}
   else if(MAP.data){g.fillStyle=cssv('--panel-2');g.fillRect(0,0,MSZ,H);g.strokeStyle=cssv('--grid');g.lineWidth=1/MV.z;g.beginPath();
     for(let i=0;i<=MSZ;i+=512){g.moveTo(i,0);g.lineTo(i,H);g.moveTo(0,i);g.lineTo(MSZ,i)}g.stroke()}
-  livePaint(g);g.restore();
+  cavePaint(g);livePaint(g);g.restore();
   const {nodes,cols,cl}=mapVis(),r=Math.max(4.5,Math.min(14,3+(MV.z/MV.fz)*1.6));MAP.r=r;
   const S2=o=>({x:MV.x+o.mx*MV.z,y:MV.y+o.my*MV.z}),on=p=>p.x>-24&&p.y>-24&&p.x<w+24&&p.y<h+24;
   const pc={Impure:cssv('--lv0'),Normal:cssv('--lv2'),Pure:cssv('--lv3')},ink=cssv('--fg'),acc=cssv('--accent');
@@ -2606,6 +2606,7 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
   let h=`<div class="flayers">`+
     chip('data-mf="nodes"',MAPF.nodes,'Nodes','<i class="fic" style="background:'+MPC.Pure+'"></i>')+
     chip('data-mf="cols"',MAPF.cols,'Collectibles','<i class="fic dia" style="background:#a463f2"></i>')+
+    chip('data-mf="caves"',MAPF.caves,'Caves','<i class="fic" style="background:rgba(38,24,64,.8);box-shadow:inset 0 0 0 2px #b88cff"></i>')+
     (LIVE.d?chip('data-ml="on"',L.on,'Factory','<i class="fic sq" style="background:#f39c3d"></i>')+
     chip('data-ml="pl"',L.pl,'Pioneers','<i class="fic" style="background:#fff;box-shadow:inset 0 0 0 3px #e8541e"></i>'):'')+`</div>`;
   if(AUTH.session){
@@ -2708,7 +2709,15 @@ function mapNorm(d){if(!d||!Array.isArray(d.nodes))return null;const num=v=>Numb
   const nodes=d.nodes.filter(n=>n&&n.id!=null&&n.r).map(n=>({id:String(n.id),k:['node','geyser','well','sat'].includes(n.k)?n.k:'node',r:String(n.r),p:['Impure','Normal','Pure'].includes(n.p)?n.p:'Normal',x:num(n.x),y:num(n.y),z:num(n.z)}));
   const cols=(Array.isArray(d.cols)?d.cols:[]).filter(c=>c&&c.id!=null&&MCOL[c.k]).map(c=>({id:String(c.id),k:c.k,x:num(c.x),y:num(c.y),z:num(c.z)}));
   return{v:1,nodes,cols}}
-function mapPrep(){if(LIVE.d)liveIngest(LIVE.d);if(MAP.data)[...MAP.data.nodes,...MAP.data.cols].forEach(o=>{const m=w2m(o.x,o.y);o.mx=m.x;o.my=m.y})}
+/* cave outlines, worked out from the game's own level data (cave meshes, cave sound zones and tunnels) */
+const CAVE={raw:null,path:null,loading:false};
+function caveLoad(){if(CAVE.raw||CAVE.loading)return;CAVE.loading=true;const s=document.createElement('script');s.src=localPage()?'icons/caves.js':'map/caves.js';
+  s.onload=()=>{CAVE.raw=window.FICSIT_CAVES||null;s.remove();cavePrep();mapDraw()};s.onerror=()=>{CAVE.loading=false;s.remove()};document.head.appendChild(s)}
+function cavePrep(){if(!CAVE.raw)return;const P=new Path2D();CAVE.raw.forEach(c=>{const f=c.p;let m=w2m(f[0]*10,f[1]*10);P.moveTo(m.x,m.y);for(let i=2;i<f.length;i+=2){m=w2m(f[i]*10,f[i+1]*10);P.lineTo(m.x,m.y)}P.closePath()});CAVE.path=P}
+function cavePaint(g){if(!MAPF.caves)return;if(!CAVE.path){caveLoad();return}const px=1/MV.z;
+  g.fillStyle='rgba(38,24,64,.42)';g.fill(CAVE.path,'nonzero');g.lineJoin='round';
+  g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=3.2*px;g.stroke(CAVE.path);g.strokeStyle='#b88cff';g.lineWidth=1.6*px;g.stroke(CAVE.path)}
+function mapPrep(){cavePrep();if(LIVE.d)liveIngest(LIVE.d);if(MAP.data)[...MAP.data.nodes,...MAP.data.cols].forEach(o=>{const m=w2m(o.x,o.y);o.mx=m.x;o.my=m.y})}
 function mapSetData(d,auto){const D=mapNorm(d);if(!D)return false;MAP.data=D;MAP.auto.data=!!auto;mapPrep();if(MAP.sel&&!mapFind(MAP.sel))MAP.sel=null;mapAfterLoad();return true}
 function mapAfterLoad(){mapPalRender();mapSideRender();mapEmpty();if(!mv.hidden){if(!MV.fit)mapFit();else mapDraw()}}
 const localPage=()=>location.protocol==='file:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
