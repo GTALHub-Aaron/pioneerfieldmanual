@@ -55,6 +55,59 @@ SKIP = re.compile(r'Sign|Ladder|VehiclePath|ConveyorPole|PipelineSupport|PipeHyp
                   r'WallHole|CeilingAttachment|FoundationPassthrough|FlowIndicator|StreetLight|'
                   r'PowerTowerPlatform|ConveyorMonitor|Potty|PowerPoleWall')
 
+
+COLLECT = re.compile(r'^(BP_Crystal|BP_WAT|BP_DropPod)')
+
+def found_collectibles(b, hs, objs, P):
+    """Names of slugs, Somersloops, Mercer Spheres and crash sites that are picked up or looted.
+    Picked-up actors are listed in each level's destroyed-actor lists; opened crash sites keep a flag."""
+    def refs(r, end):
+        st = r.p
+        try:
+            n = r.i32(); out = [(r.fs(), r.fs()) for _ in range(n)]
+            if r.p == end: return out
+        except Exception: pass
+        r.p = st
+        try:
+            m = r.i32(); out = []
+            for _ in range(m):
+                r.fs(); n = r.i32(); out += [(r.fs(), r.fs()) for _ in range(n)]
+            if r.p == end: return out
+        except Exception: pass
+        return None
+    gone = []
+    for m in re.finditer(rb'\x1a\x00\x00\x00[0-9A-Z]{25}\x00', b):
+        p = m.end()
+        try:
+            L = struct.unpack_from('<q', b, p)[0]
+            if not (0 < L < 5_000_000): continue
+            r = R(b, p+8); base = r.p; n = r.i32()
+            if not (0 <= n < 200000): continue
+            for _ in range(n): read_header(r)
+            c = refs(r, base+L)
+            if c is None: continue
+            gone += c
+            r.p = base+L; OL = r.i64(); r.p += OL
+            n2 = r.i32()
+            if 0 <= n2 < 5000:
+                try: gone += [(r.fs(), r.fs()) for _ in range(n2)]
+                except Exception: pass
+        except Exception:
+            continue
+    # the persistent level's own list sits right after its headers
+    i = b.find(b'$\x00\x00\x00/Script/FactoryGame.FGWorldSettings\x00\x11\x00\x00\x00Persistent_Level')
+    if i >= 0:
+        r = R(b, i-16); L = r.i64(); base = r.p; n = r.i32()
+        for _ in range(n): read_header(r)
+        c = refs(r, base+L)
+        if c: gone += c
+    names = {x[1].rsplit('.', 1)[-1] for x in gone}
+    for i, h in enumerate(hs):
+        if 'DropPod' in h['cls'] and h['t'] == 1:
+            pr = P(i)
+            if pr.get('mHasBeenLooted') or pr.get('mHasBeenOpened'): names.add(h['inst'].rsplit('.', 1)[-1])
+    return sorted(n for n in names if COLLECT.match(n))
+
 def find_persistent(b):
     i = b.find(b'$\x00\x00\x00/Script/FactoryGame.FGWorldSettings\x00\x11\x00\x00\x00Persistent_Level')
     if i < 0:
@@ -221,12 +274,14 @@ def main(src, dst):
                 found.append([C(c), r10(pos[0]), r10(pos[1]), r10(pos[2]), int(round(yaw(rot)))])
             break
 
-    out = {'v': 1, 'synced': int(time.time()), 'cls': classes, 'b': blds, 'f': found,
+    try: got = found_collectibles(b, hs, objs, P)
+    except Exception as e: got = []; print('could not read collected items:', e)
+    out = {'v': 1, 'synced': int(time.time()), 'cls': classes, 'b': blds, 'f': found, 'found': got,
            'belts': belts, 'pipes': pipes, 'tubes': tubes, 'wires': wires, 'players': players}
     js = json.dumps(out, separators=(',', ':'))
     open(dst, 'w').write(js)
     print(f'{len(blds)} buildings, {len(found)} foundations/walls, {len(belts)} belts, {len(pipes)} pipes, '
-          f'{len(wires)} wires, {len(players)} players -> {len(js)//1024} KB')
+          f'{len(wires)} wires, {len(players)} players, {len(got)} collectibles found -> {len(js)//1024} KB')
 
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2])
