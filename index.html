@@ -2713,13 +2713,16 @@ function mapNorm(d){if(!d||!Array.isArray(d.nodes))return null;const num=v=>Numb
 const CAVE={raw:null,path:null,loading:false};
 function caveLoad(){if(CAVE.raw||CAVE.loading)return;CAVE.loading=true;const s=document.createElement('script');s.src=localPage()?'icons/caves.js':'map/caves.js';
   s.onload=()=>{CAVE.raw=window.FICSIT_CAVES||null;s.remove();cavePrep();mapDraw()};s.onerror=()=>{CAVE.loading=false;s.remove()};document.head.appendChild(s)}
-function cavePrep(){if(!CAVE.raw)return;const R=Array.isArray(CAVE.raw)?{caves:CAVE.raw,ent:[]}:CAVE.raw,P=new Path2D();
-  CAVE.ent=(R.ent||[]).map(e=>w2m(e[0]*10,e[1]*10));R.caves.forEach(c=>{const f=c.p;let m=w2m(f[0]*10,f[1]*10);P.moveTo(m.x,m.y);for(let i=2;i<f.length;i+=2){m=w2m(f[i]*10,f[i+1]*10);P.lineTo(m.x,m.y)}P.closePath()});CAVE.path=P}
-function cavePaint(g){if(!MAPF.caves)return;if(!CAVE.path){caveLoad();return}const px=1/MV.z;
-  g.fillStyle='rgba(38,24,64,.42)';g.fill(CAVE.path,'nonzero');g.lineJoin='round';
-  g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=3.2*px;g.stroke(CAVE.path);g.strokeStyle='#b88cff';g.lineWidth=1.6*px;g.stroke(CAVE.path);
-  /* entrances: a white dot with a dark ring, kept a steady size on screen */
-  if(CAVE.ent&&MV.z/MV.fz>=1.3){const r=4.5*px;CAVE.ent.forEach(e=>{g.beginPath();g.arc(e.x,e.y,r,0,7);g.fillStyle='#fff';g.fill();g.lineWidth=2*px;g.strokeStyle='#3c1e5a';g.stroke()})}}
+function cavePrep(){if(!CAVE.raw)return;const R=Array.isArray(CAVE.raw)?{caves:CAVE.raw,ent:[]}:CAVE.raw,P=new Path2D(),U=new Path2D();
+  const W=(a,b)=>w2m(a*10,b*10);CAVE.ent=(R.ent||[]).map(e=>W(e[0],e[1]));CAVE.bars=(R.bars||[]).map(e=>[W(e[0],e[1]),W(e[2],e[3])]);
+  R.caves.forEach(c=>{const f=c.p,T=c.u?U:P;let m=W(f[0],f[1]);T.moveTo(m.x,m.y);for(let i=2;i<f.length;i+=2){m=W(f[i],f[i+1]);T.lineTo(m.x,m.y)}T.closePath()});CAVE.path=P;CAVE.upath=U}
+/* caves; ones still to be checked in-game are orange; entrances are light purple marks, shown once zoomed in a little */
+function cavePaint(g){if(!MAPF.caves)return;if(!CAVE.path){caveLoad();return}const px=1/MV.z;g.lineJoin='round';
+  const shape=(P,fill,line)=>{g.fillStyle=fill;g.fill(P,'nonzero');g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=3.2*px;g.stroke(P);g.strokeStyle=line;g.lineWidth=1.6*px;g.stroke(P)};
+  shape(CAVE.path,'rgba(38,24,64,.42)','#b88cff');shape(CAVE.upath,'rgba(120,60,0,.35)','#ff9a3c');
+  if(MV.z/MV.fz>=1.3){const r=3.6*px,D='#5a2a6e',L='#e8cdff';g.lineCap='round';
+    (CAVE.bars||[]).forEach(([a,b])=>{g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.strokeStyle=D;g.lineWidth=2*r+2.5*px;g.stroke();g.strokeStyle=L;g.lineWidth=2*r;g.stroke()});
+    CAVE.ent.forEach(e=>{g.beginPath();g.arc(e.x,e.y,r+1.4*px,0,7);g.fillStyle=D;g.fill();g.beginPath();g.arc(e.x,e.y,r,0,7);g.fillStyle=L;g.fill()})}}
 function mapPrep(){cavePrep();if(LIVE.d)liveIngest(LIVE.d);if(MAP.data)[...MAP.data.nodes,...MAP.data.cols].forEach(o=>{const m=w2m(o.x,o.y);o.mx=m.x;o.my=m.y})}
 function mapSetData(d,auto){const D=mapNorm(d);if(!D)return false;MAP.data=D;MAP.auto.data=!!auto;mapPrep();if(MAP.sel&&!mapFind(MAP.sel))MAP.sel=null;mapAfterLoad();return true}
 function mapAfterLoad(){mapPalRender();mapSideRender();mapEmpty();if(!mv.hidden){if(!MV.fit)mapFit();else mapDraw()}}
