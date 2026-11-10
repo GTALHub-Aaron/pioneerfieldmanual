@@ -2780,7 +2780,7 @@ $('#mapPal').addEventListener('click',e=>{if(e.target.closest('[data-lsync]')){l
   if(d.mp){MAPF.pur[d.mp]=MAPF.pur[d.mp]===false;b.setAttribute('aria-pressed',MAPF.pur[d.mp]!==false)}
   else if(d.mall){new Set((MAP.data?MAP.data.nodes:[]).map(n=>n.r)).forEach(r=>MAPF.res[r]=d.mall==='1');mapPalRender()}
   else if(d.mcall){Object.keys(MCOL).forEach(k=>MAPF.col[k]=d.mcall==='1');if(d.mcall==='1')MAPF.cols=true;MAPF.focus=null;mapPalRender();mapSideRender()}
-  else if(d.mlall){['b','f','belt','pipe','wire'].forEach(k=>MAPF.live[k]=d.mlall==='1');if(d.mlall==='1')MAPF.live.on=true;mapPalRender()}
+  else if(d.mlall){['b','f','belt','pipe','wire'].forEach(k=>MAPF.live[k]=d.mlall==='1');if(d.mlall==='1')MAPF.live.on=true;else MAPF.live.sloop=false;mapPalRender();mapSideRender()}
   else if('mbreset' in d){MAPF.b={...MAP_DEF_B};mapPrep();mapPalRender();$('#mapPal .mcal').open=true}else return;mapSave();mapDraw()});
 $('#mapSide').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if('madd' in b.dataset){const o=mapFind(MAP.sel);if(o)mapAdd(o)}
