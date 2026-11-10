@@ -2215,7 +2215,12 @@ function mapFocus(id,zoom){const o=mapFind(id);if(!o)return;MAP.sel=id;const w=m
 function mapVis(){const D=MAP.data,cl=mapClaims();if(!D)return{nodes:[],cols:[],cl};
   const nodes=MAPF.nodes?D.nodes.filter(n=>MAPF.res[n.r]!==false&&MAPF.pur[n.p]!==false&&!(MAPF.free&&cl[n.id])):[];
   const cols=MAPF.cols?D.cols.filter(c=>MAPF.col[c.k]!==false):[];return{nodes,cols,cl}}
-const ICACHE={};
+const ICACHE={},MDISK='#9a9fa8';
+/* nodes with a miner, extractor or geothermal generator from the server sitting on them */
+function liveTapped(){const key=(LIVE.d?LIVE.d.synced:0)+'|'+(MAP.data?MAP.data.nodes.length:0);if(LIVE._tk===key)return LIVE.tap;
+  const tap=new Map();if(LIVE.d&&MAP.data){const ex=LIVE.bl.filter(b=>/Miner|OilPump|FrackingExtractor|GeoThermal/.test(b.cls));
+    for(const b of ex){let best=null,bd=1500;for(const n of MAP.data.nodes){const d=Math.hypot(n.x-b.x,n.y-b.y);if(d<bd){bd=d;best=n}}if(best){tap.set(best.id,b);b._node=best}}}
+  LIVE._tk=key;LIVE.tap=tap;return tap}
 function mIcon(cls){const u=cls&&ICONS[cls];if(!u)return null;let im=ICACHE[u];if(!im){im=ICACHE[u]=new Image();im.onload=()=>mapDraw();im.src=u}return im.complete&&im.naturalWidth?im:null}
 /* ---- live factory layer: buildings, belts, pipes and power lines read from the server save ---- */
 const LIVE_URL='https://raw.githubusercontent.com/GTALHub-Aaron/pioneerfieldmanual/live-data/live.json';
@@ -2394,16 +2399,20 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
   const S2=o=>({x:MV.x+o.mx*MV.z,y:MV.y+o.my*MV.z}),on=p=>p.x>-24&&p.y>-24&&p.x<w+24&&p.y<h+24;
   const pc={Impure:cssv('--lv0'),Normal:cssv('--lv2'),Pure:cssv('--lv3')},ink=cssv('--fg'),acc=cssv('--accent');
   cols.forEach(c=>{const p=S2(c);if(!on(p))return;const [,col,cls]=MCOL[c.k],s=r*.85,im=s>=8&&mIcon(cls);g.save();g.translate(p.x,p.y);
-    if(im)g.drawImage(im,-s,-s,s*2,s*2);
+    if(im){g.beginPath();g.arc(0,0,s+1.5,0,7);g.fillStyle=MDISK;g.fill();g.lineWidth=1.6;g.strokeStyle='#000';g.stroke();g.drawImage(im,-s*.78,-s*.78,s*1.56,s*1.56)}
     else{g.fillStyle=col;g.strokeStyle='rgba(0,0,0,.6)';g.lineWidth=1.2;g.beginPath();
       if(c.k.startsWith('slug')){g.moveTo(0,-s);g.lineTo(s*.72,0);g.lineTo(0,s);g.lineTo(-s*.72,0);g.closePath()}
       else if(c.k==='pod'){g.moveTo(0,-s);g.lineTo(s*.95,s*.8);g.lineTo(-s*.95,s*.8);g.closePath()}else g.arc(0,0,s*.8,0,7);
       g.fill();g.stroke();if(c.k==='mercer'){g.beginPath();g.arc(0,0,s*.32,0,7);g.fillStyle='#fff';g.fill()}}
     g.restore()});
-  nodes.forEach(n=>{const p=S2(n);if(!on(p))return;const im=r>=9&&mIcon(ITEM_CLS[n.r]);
-    g.beginPath();g.arc(p.x,p.y,r,0,7);g.fillStyle=MRES[n.r]||'#888';g.fill();
-    if(im){g.save();g.beginPath();g.arc(p.x,p.y,r-1,0,7);g.clip();g.drawImage(im,p.x-r+1,p.y-r+1,(r-1)*2,(r-1)*2);g.restore()}
-    g.lineWidth=Math.max(2,r*.3);g.strokeStyle=pc[n.p]||ink;g.beginPath();g.arc(p.x,p.y,r,0,7);g.stroke();
+  const tap=liveTapped();
+  nodes.forEach(n=>{const p=S2(n);if(!on(p))return;const im=r>=7&&mIcon(ITEM_CLS[n.r]),pw=Math.max(2,r*.28);
+    g.beginPath();g.arc(p.x,p.y,r+pw/2+1,0,7);g.fillStyle='#000';g.fill();
+    g.beginPath();g.arc(p.x,p.y,r,0,7);g.fillStyle=im?MDISK:(MRES[n.r]||'#888');g.fill();
+    if(im)g.drawImage(im,p.x-r*.8,p.y-r*.8,r*1.6,r*1.6);
+    g.lineWidth=pw;g.strokeStyle=pc[n.p]||ink;g.beginPath();g.arc(p.x,p.y,r,0,7);g.stroke();
+    if(tap.has(n.id)){const bx=p.x+r*.8,by=p.y-r*.8,br=Math.max(5,r*.45);g.beginPath();g.arc(bx,by,br+1.2,0,7);g.fillStyle='#000';g.fill();g.beginPath();g.arc(bx,by,br,0,7);g.fillStyle='#22b14c';g.fill();
+      g.lineWidth=Math.max(1.6,br*.32);g.strokeStyle='#fff';g.lineCap='round';g.lineJoin='round';g.beginPath();g.moveTo(bx-br*.48,by+br*.02);g.lineTo(bx-br*.12,by+br*.4);g.lineTo(bx+br*.52,by-br*.36);g.stroke()}
     if(n.k!=='node'){g.lineWidth=1.5;g.strokeStyle=ink;g.beginPath();g.arc(p.x,p.y,r+2.5,0,7);g.stroke()}
     if(cl[n.id]){g.lineWidth=3;g.strokeStyle=acc;g.beginPath();g.arc(p.x,p.y,r+(n.k!=='node'?6:4.5),0,7);g.stroke()}});
   livePlayers(g,S2,on);
@@ -2416,7 +2425,7 @@ const mM=v=>Math.round(v/100).toLocaleString()+' m',mXY=(x,y)=>`X ${mM(x)} · Y 
 function m2w(cx,cy){const b=MAPF.b,mx=(cx-MV.x)/MV.z,my=(cy-MV.y)/MV.z;return{x:b.x0+mx/MSZ*(b.x1-b.x0),y:b.y0+my/MSZ*(b.y1-b.y0),in:mx>=0&&my>=0&&mx<=MSZ&&my<=mapH()}}
 function mapCursor(cx,cy){const el=$('#mapXY');if(!el)return;if(cx==null){el.hidden=true;return}const w=m2w(cx,cy);el.hidden=!w.in;if(w.in)el.textContent=mXY(w.x,w.y)}
 function mapTip(o,cx,cy){const t=$('#mapTip');if(!o){t.hidden=true;return}const cl=mapClaims()[o.id];
-  t.innerHTML=`<b>${mName(o)}</b>${o.p?` · <span style="color:var(--${purVar(o.p)})">${o.p}</span>`:''}`+`<br><span class="mcoord">${mXY(o.x,o.y)} · height ${mM(o.z)}</span>`+(cl?`<br><span style="color:var(--accent)">Used by ${cl.length>1?cl.length+' cards':'a card'} in this plan</span>`:'');
+  t.innerHTML=`<b>${mName(o)}</b>${o.p?` · <span style="color:var(--${purVar(o.p)})">${o.p}</span>`:''}`+`<br><span class="mcoord">${mXY(o.x,o.y)} · height ${mM(o.z)}</span>`+(cl?`<br><span style="color:var(--accent)">Used by ${cl.length>1?cl.length+' cards':'a card'} in this plan</span>`:'')+(()=>{const b=liveTapped().get(o.id);return b?`<br><span style="color:#22b14c">✓ ${esc(lBName(b.cls))} on this node${b.info.c!=null?' · '+fmt(b.info.c)+'%':''}</span>`:''})();
   t.hidden=false;t.style.left=Math.max(8,Math.min(cx+14,mv.clientWidth-t.offsetWidth-8))+'px';t.style.top=(cy-t.offsetHeight-12<8?cy+16:cy-t.offsetHeight-12)+'px'}
 function liveTip(l,cx,cy){const t=$('#mapTip');t.innerHTML=liveTipHTML(l);t.hidden=false;
   t.style.left=Math.max(8,Math.min(cx+14,mv.clientWidth-t.offsetWidth-8))+'px';t.style.top=(cy-t.offsetHeight-12<8?cy+16:cy-t.offsetHeight-12)+'px'}
