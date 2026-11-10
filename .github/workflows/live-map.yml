@@ -1,7 +1,7 @@
 name: Live map sync
+# started every 15 minutes by the Supabase scheduler (pg_cron -> sync-map function),
+# and by the map's Sync now button; GitHub's own schedule was too unreliable
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
