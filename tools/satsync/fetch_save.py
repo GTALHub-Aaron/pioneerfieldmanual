@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Download the newest save of the running session from a Satisfactory dedicated server.
 
-Reads SF_HOST (host:port, e.g. 1.2.3.4:7777) and SF_TOKEN (from `server.GenerateAPIToken`)
-from the environment and writes the save to the path given as the first argument.
+Reads SF_HOST (host:port, e.g. 1.2.3.4:7777) and either SF_TOKEN (from `server.GenerateAPIToken`)
+or SF_ADMIN_PASSWORD (the server's admin password, used to log in each run) from the environment and writes the save to the path given as the first argument.
 Nothing secret is ever printed.
 """
 import json, os, ssl, sys, urllib.request
 
 def call(host, token, function, data=None, raw=False):
     body = json.dumps({'function': function, 'data': data or {}}).encode()
-    req = urllib.request.Request(f'https://{host}/api/v1', data=body, method='POST', headers={
-        'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token})
+    headers = {'Content-Type': 'application/json'}
+    if token: headers['Authorization'] = 'Bearer ' + token
+    req = urllib.request.Request(f'https://{host}/api/v1', data=body, method='POST', headers=headers)
     # dedicated servers use a self-signed certificate
     ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE
     with urllib.request.urlopen(req, context=ctx, timeout=120) as r:
@@ -27,8 +28,14 @@ def g(o, k, default=None):
 
 def main(out):
     host, token = os.environ.get('SF_HOST', '').strip(), os.environ.get('SF_TOKEN', '').strip()
-    if not host or not token:
-        sys.exit('SF_HOST and SF_TOKEN must be set')
+    pw = os.environ.get('SF_ADMIN_PASSWORD', '')
+    if not host or not (token or pw):
+        sys.exit('SF_HOST and either SF_TOKEN or SF_ADMIN_PASSWORD must be set')
+    if not token:
+        d = call(host, None, 'PasswordLogin', {'MinimumPrivilegeLevel': 'Administrator', 'Password': pw})
+        token = g(d, 'authenticationToken')
+        if not token:
+            sys.exit('admin password login failed (check SF_ADMIN_PASSWORD)')
     d = call(host, token, 'EnumerateSessions')
     sessions = g(d, 'sessions') or []
     if not sessions:
