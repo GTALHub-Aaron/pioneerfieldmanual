@@ -2429,6 +2429,22 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   /* buildings with game shapes are grouped by floor height (1 m steps) and painted bottom floor first, so a machine on a higher platform sits over one below it */
   function lvAt(z,k,up){const zb=Math.floor(lM(z)/100)+(up||0);let B=P.lz.get(zb);if(!B)P.lz.set(zb,B={});return B[k]||(B[k]=[])}
   const line=(p,flat)=>{let c=tm(flat[0],flat[1]);p.moveTo(c.x,c.y);for(let i=2;i<flat.length;i+=2){c=tm(flat[i],flat[i+1]);p.lineTo(c.x,c.y)}};
+  /* a lift fixed straight onto a machine, container or splitter stands 3 m out from that port, and in the game the run between them is part of the lift:
+     draw that run as a short belt so the lift reads as joined on. A lift has two ends; any end not taken by a belt (belts end at the lift's middle) is
+     fixed straight onto something. The bottom end faces the lift's own +X at the lift's height; the save doesn't say which way the top faces, so take
+     the nearest building above the lift that sits 3 m out on any side. */
+  {const LG=new Map(),gk=(x,y)=>Math.round(x/200)+','+Math.round(y/200),BE=new Map(),ek=(x,y)=>Math.round(x/50)+','+Math.round(y/50);
+   d.b.forEach(o=>{if(/ConveyorLift|PowerPole|Pipe/.test(d.cls[o[0]]))return;const k=gk(o[1],o[2]);(LG.get(k)||LG.set(k,[]).get(k)).push(o)});
+   d.belts.forEach(([t,z,f])=>[[f[0],f[1]],[f[f.length-2],f[f.length-1]]].forEach(([x,y])=>{const k=ek(x,y);(BE.get(k)||BE.set(k,[]).get(k)).push([x,y])}));
+   const nBelt=(x,y)=>{let n=0;const cx=Math.round(x/50),cy=Math.round(y/50);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)(BE.get((cx+i)+','+(cy+j))||[]).forEach(([ex,ey])=>{if(Math.hypot(ex-x,ey-y)<=5)n++});return n};
+   const onB=(px,py,z,lo,hi)=>{let best=null;const cx=Math.round(px/200),cy=Math.round(py/200);for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(const[mi,mx,my,mz,myaw]of(LG.get((cx+i)+','+(cy+j))||[])){
+       const dz=z-mz;if(dz<lo||dz>hi)continue;const k=lKey(d.cls[mi]),b=lBox(k)||lBox(k.replace(/Mk\d$/,'Mk1')),fp=LFP[k]||LFP[k.replace(/Mk\d$/,'Mk1')]||[3,3],[x0,x1,y0,y1]=b||[-fp[0]/2,fp[0]/2,-fp[1]/2,fp[1]/2];
+       const ma=myaw*Math.PI/180,ddx=(px-mx)/10,ddy=(py-my)/10,lx=ddx*Math.cos(ma)+ddy*Math.sin(ma),ly=-ddx*Math.sin(ma)+ddy*Math.cos(ma);
+       if(lx>=x0-.5&&lx<=x1+.5&&ly>=y0-.5&&ly<=y1+.5&&(!best||-dz<best))best=-dz}return best};
+   d.b.forEach(([ci,x,y,z,yaw])=>{const c=d.cls[ci];if(!/ConveyorLift/.test(c))return;const t=Math.min(+((c.match(/Mk(\d)/)||[0,1])[1]),6);
+     let need=2-Math.min(2,nBelt(x,y));const out=(q)=>{const a=(yaw+q*90)*Math.PI/180;return[x+30*Math.cos(a),y+30*Math.sin(a)]};
+     if(need&&onB(...out(0),z,-5,30)!==null){line(P.belt[t],[x,y,...out(0)]);need--}
+     if(need){let bq=-1,bd=1e9;for(let q=0;q<4;q++){const h=onB(...out(q),z,-600,-15);if(h!==null&&h<bd){bd=h;bq=q}}if(bq>=0)line(P.belt[t],[x,y,...out(bq)])}})}
   d.belts.forEach(([t,z,f])=>line(P.belt[Math.min(t,6)],f));d.pipes.forEach(([t,z,f])=>line(P.pipe[t===2?2:1],f));(d.tubes||[]).forEach(([t,z,f])=>line(P.tube,f));
   d.wires.forEach(([a,b,c,e])=>line(P.wire,[a,b,c,e]));
   LIVE.d=d;LIVE.paths=P;LIVE.bl=bl;LIVE.u=u;LIVE.found=new Set(d.found||[]);mineLoad(d.synced);
