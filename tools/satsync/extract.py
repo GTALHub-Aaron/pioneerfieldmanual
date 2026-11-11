@@ -160,6 +160,16 @@ def main(src, dst):
         if slots: return items, used, len(st)
         return items or None
 
+    def inv_tot(ci):
+        tot = {}
+        if ci is None: return tot
+        for s in P(ci).get('mInventoryStacks') or []:
+            if not isinstance(s, dict): continue
+            it = s.get('Item'); n = s.get('NumItems') or 0
+            path = it.get('_item') if isinstance(it, dict) else None
+            if path and n: tot[short(path)] = tot.get(short(path), 0)+n
+        return tot
+
     def allowed(ci):
         if ci is None: return None
         a = [short(x[1]) for x in (P(ci).get('mAllowedItemDescriptors') or []) if isinstance(x, tuple) and x[1].startswith('/Game')]
@@ -176,8 +186,21 @@ def main(src, dst):
         cls = short(h['cls']); inst = h['inst']
         if cls == 'Char_Player_C':
             pr = P(i)
-            players.append({'n': pr.get('mCachedPlayerName') or 'Pioneer',
-                            'x': r10(h['pos'][0]), 'y': r10(h['pos'][1]), 'z': r10(h['pos'][2])})
+            pl = {'n': pr.get('mCachedPlayerName') or 'Pioneer',
+                  'x': r10(h['pos'][0]), 'y': r10(h['pos'][1]), 'z': r10(h['pos'][2])}
+            r3 = inv_summary(comp(inst, 'inventory'), 80, True)
+            if r3:
+                items, used, total = r3
+                if items: pl['i'] = items
+                if total: pl['slots'] = [used, total]
+            eq = []
+            for slot in ('HeadSlot', 'BodySlot', 'BackSlot', 'LegsSlot', 'ArmSlot'):
+                for k in inv_tot(comp(inst, slot)):
+                    if k.startswith('BP_Equipment') and k not in eq: eq.append(k)
+            if eq: pl['eq'] = eq
+            n = sum(inv_tot(comp(inst, s)).get('Desc_WAT1_C', 0) for s in ('inventory', 'ArmSlot'))
+            if n: pl['sl'] = n
+            players.append(pl)
             continue
         if '/Buildable/' not in h['cls'] or SKIP.search(cls): continue
         if 'ConveyorBelt' in cls or cls.startswith('Build_Pipeline') and 'Pump' not in cls and 'Junction' not in cls or cls == 'Build_PipeHyper_C':
@@ -243,6 +266,8 @@ def main(src, dst):
                 items, used, total = r3
                 if items: info['i'] = items
                 if total: info['slots'] = [used, total]
+            n = inv_tot(comp(inst, 'StorageInventory') or comp(inst, 'inventory')).get('Desc_WAT1_C', 0)
+            if n: info['sl'] = n
         elif 'Generator' in cls:
             pi = comp(inst, 'powerInfo')
             if pi is not None:
