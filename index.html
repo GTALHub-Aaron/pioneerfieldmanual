@@ -2401,8 +2401,20 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   LCAT.forEach(c=>P.cat[c[0]]=new Path2D());
   const addPoly=(p,pts)=>{p.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)p.lineTo(pts[i][0],pts[i][1]);p.closePath()};
   d.f.forEach(([ci,x,y,z,yaw])=>{const c=d.cls[ci];if(/Wall/.test(c))addPoly(P.wall,rect(x,y,yaw,.5,8));else addPoly(P.f,rect(x,y,yaw,8,8))});
+  /* pipe ends, bucketed by ~4 m cells, so each pipe junction can draw its arms toward the pipes actually attached to it (yaw alone gets the T the wrong way round) */
+  const PE=new Map(),ck=(x,y)=>Math.round(x/400)+','+Math.round(y/400);
+  d.pipes.forEach(([t,z,f])=>{const n=f.length/2;[[0,1],[n-1,-1]].forEach(([i,s])=>{const x=lM(f[i*2]),y=lM(f[i*2+1]);let j=i+s,dx=0,dy=0;
+    while(j>=0&&j<n){dx=lM(f[j*2])-x;dy=lM(f[j*2+1])-y;if(Math.hypot(dx,dy)>40)break;j+=s}
+    const k=ck(x,y);(PE.get(k)||PE.set(k,[]).get(k)).push([x,y,dx,dy])})});
+  const juncArms=(x,y)=>{const X=lM(x),Y=lM(y),A=[];const cx=Math.round(X/400),cy=Math.round(Y/400);
+    for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)(PE.get((cx+i)+','+(cy+j))||[]).forEach(([px,py,dx,dy])=>{const r=Math.hypot(px-X,py-Y);if(r>180)return;
+      const a=r>40?Math.atan2(py-Y,px-X):Math.atan2(dy,dx),o=A.find(q=>Math.abs(Math.atan2(Math.sin(a-q[0]),Math.cos(a-q[0])))<.5);if(o)o[1]=Math.max(o[1],r);else A.push([a,r])});return A};
   const bl=d.b.map(([ci,x,y,z,yaw,info])=>{const cls=d.cls[ci],k=lKey(cls),fp=LFP[k]||LFP[k.replace(/Mk\d$/,'Mk1')]||(/Lift/.test(k)?[2,2]:[3,3]),cat=lCat(cls),pts=rect(x,y,yaw,fp[0],fp[1]);
     const c=tm(x,y),gs=lShp(k)||lShp(k.replace(/Mk\d$/,'Mk1')),sh=gs?null:LSH(k);
+    const ja=/^PipelineJunction/.test(k)?juncArms(x,y):null;
+    /* T junction: turn the drawing so its stem points at the one pipe that has no pipe opposite it */
+    if(ja&&k==='PipelineJunction_T'&&ja.length>=3){const opp=(p,q)=>Math.abs(Math.atan2(Math.sin(p-q-Math.PI),Math.cos(p-q-Math.PI)))<.5,st=ja.find(([p])=>!ja.some(([q])=>opp(p,q)));if(st)yaw=st[0]*180/Math.PI-90}
+    else if(ja&&ja.length)yaw=ja[0][0]*180/Math.PI;
     if(gs){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u);gs.forEach((q,i)=>P.lv[cat[0]][i].addPath(q,m))}
     else if(sh){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u);P.cat[cat[0]].addPath(sh.b,m);P.dk.addPath(sh.d,m);P.lt.addPath(sh.l,m)}else addPoly(P.cat[cat[0]],pts);
     if(info&&info.sl)addPoly(P.sloop,pts);return{cls,x:lM(x),y:lM(y),z:lM(z),info:info||{},cat,pts,mx:c.x,my:c.y,small:fp[0]*fp[1]<=16}});
