@@ -2324,16 +2324,88 @@ function lItem(d){lNames();return LINAME[d]||lHuman(d.replace(/^Desc_|^BP_Equipm
 function lRecipe(r){const k=r.replace(/^Recipe_|_C$/g,''),alt=/^Alternate_/.test(k),base=k.replace(/^Alternate_/,'');lNames();
   const viaItem=LINAME['Desc_'+base+'_C'];return(alt?'Alternate: ':'')+(viaItem||lHuman(base))}
 const lM=v=>v*10;  /* file is in decimetres, the map maths uses centimetres */
+/* building outlines taken from the game's own collision shapes, in metres, as [height level 0-3, x,y,x,y...] */
+const LSHD={"ConstructorMk1":[[0,[3.19,3.89,-3.19,3.89,-3.19,-4.01,3.19,-4.01]],[0,[-3.19,4.66,-3.73,4.66,-3.73,-4.68,-3.19,-4.68]],[0,[3.19,-4.68,3.73,-4.68,3.73,4.66,3.19,4.66]],[0,[-3.19,3.15,-3.73,3.15,-3.73,-3.15,-3.19,-3.15]],[0,[3.73,3.15,3.19,3.15,3.19,-3.15,3.73,-3.15]],[1,[1.08,4.28,-1.08,4.28,-1.08,2.91,1.08,2.91]],[2,[-2.14,1.4,-3.7,1.4,-3.7,-0.6,-2.14,-0.6]],[2,[2.14,-1.4,3.7,-1.4,3.7,0.6,2.14,0.6]],[2,[0.42,3.42,-0.42,3.42,-0.42,2.91,0.42,2.91]],[3,[1.89,-2.51,-1.89,-2.51,-1.89,-4.0,1.89,-4.0]],[3,[1.42,-4.0,-1.42,-4.0,-1.42,-4.8,1.42,-4.8]],[3,[2.14,2.91,-2.14,2.91,-2.14,-2.51,2.14,-2.51]],[3,[-1.6,1.81,-2.45,1.81,-2.45,-1.96,-1.6,-1.96]],[3,[1.6,-1.96,2.45,-1.96,2.45,1.81,1.6,1.81]],[3,[-1.6,-2.9,-1.89,-2.9,-1.89,-3.82,-1.6,-3.82]],[3,[-1.6,-4.69,1.6,-4.69,1.6,2.14,0.92,3.15,-0.92,3.15,-1.6,2.14]]]};
+const LSHP={};function lShp(k){if(!LSHD[k])return null;if(!LSHP[k]){const L=[0,1,2,3].map(()=>new Path2D());LSHD[k].forEach(([lv,f])=>{const p=L[lv];p.moveTo(f[0],f[1]);for(let i=2;i<f.length;i+=2)p.lineTo(f[i],f[i+1]);p.closePath()});LSHP[k]=L}return LSHP[k]}
+/* ---- building shapes: simple top-down outlines in metres, centred on the building, drawn our own way ----
+   each shape has b (body, filled in the category colour), d (darker parts) and l (light lines) */
+const LSH=(()=>{const mk=f=>{const o={b:new Path2D(),d:new Path2D(),l:new Path2D()};
+    const rr=(p,x,y,w,h,r)=>{r=Math.min(r||0,w/2,h/2);x-=w/2;y-=h/2;p.moveTo(x+r,y);p.arcTo(x+w,y,x+w,y+h,r);p.arcTo(x+w,y+h,x,y+h,r);p.arcTo(x,y+h,x,y,r);p.arcTo(x,y,x+w,y,r);p.closePath()};
+    const c=(p,x,y,r)=>{p.moveTo(x+r,y);p.arc(x,y,r,0,Math.PI*2);p.closePath()};
+    const pg=(p,pts)=>{p.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)p.lineTo(pts[i],pts[i+1]);p.closePath()};
+    const ln=(p,pts)=>{p.moveTo(pts[0],pts[1]);for(let i=2;i<pts.length;i+=2)p.lineTo(pts[i],pts[i+1])};
+    f({B:(...a)=>rr(o.b,...a),Bc:(...a)=>c(o.b,...a),Bp:a=>pg(o.b,a),D:(...a)=>rr(o.d,...a),Dc:(...a)=>c(o.d,...a),Dp:a=>pg(o.d,a),L:(...a)=>rr(o.l,...a),Lc:(...a)=>c(o.l,...a),Ll:a=>ln(o.l,a)});return o};
+  const port=(s,w,h)=>{s.D(0,-h/2+.35,2.2,.7,.2);s.D(0,h/2-.35,2.2,.7,.2)};
+  const S={
+    ConstructorMk1:mk(s=>{s.B(0,0,7.6,9.6,1.2);s.D(0,-1.8,5.4,4,1);s.Lc(0,-1.8,1.4);s.D(-1.8,2.8,2.6,2.4,.6);s.D(1.8,2.8,2.6,2.4,.6);port(s,8,10)}),
+    SmelterMk1:mk(s=>{s.B(0,0,5.6,8.6,1.4);s.Dc(0,-1,2.3);s.Lc(0,-1,1.3);s.D(0,2.9,3.6,1.8,.5);port(s,6,9)}),
+    AssemblerMk1:mk(s=>{s.B(0,0,9.6,14.6,1.4);s.D(0,-3.6,7.4,5.2,1);s.D(0,3.6,7.4,5.2,1);s.Lc(0,-3.6,1.6);s.Lc(0,3.6,1.6);s.Ll([-4.8,0,4.8,0]);port(s,10,15)}),
+    FoundryMk1:mk(s=>{s.B(0,0,9.6,8.6,1.4);s.Dc(-2.4,-.4,2.1);s.Dc(2.4,-.4,2.1);s.Lc(-2.4,-.4,1.1);s.Lc(2.4,-.4,1.1);s.D(0,3,7,1.4,.4);port(s,10,9)}),
+    ManufacturerMk1:mk(s=>{s.B(0,0,17.4,19.4,2);[[-4.3,-4.6],[4.3,-4.6],[-4.3,4.6],[4.3,4.6]].forEach(([x,y])=>{s.D(x,y,6.6,7,1.2);s.Lc(x,y,1.8)});s.Ll([-8.7,0,8.7,0]);port(s,18,20)}),
+    OilRefinery:mk(s=>{s.B(0,0,9.6,19.6,1.6);s.Dc(0,-5.2,3.6);s.Lc(0,-5.2,2.4);s.Dc(0,2.2,3);s.Lc(0,2.2,1.8);s.D(0,7.4,7,2.6,.6);port(s,10,20)}),
+    Blender:mk(s=>{s.B(0,0,17.4,15.4,2);[[-4.2,-3.6],[4.2,-3.6],[-4.2,3.6],[4.2,3.6]].forEach(([x,y])=>{s.Dc(x,y,3);s.Lc(x,y,1.9)});port(s,18,16)}),
+    Packager:mk(s=>{s.B(0,0,7.6,7.6,1.2);s.Dc(0,0,2.6);s.Lc(0,0,1.5);s.Ll([-3.8,0,3.8,0]);port(s,8,8)}),
+    HadronCollider:mk(s=>{s.B(0,0,23,37,3);s.Dc(0,-6,10);s.Lc(0,-6,8.6);s.Lc(0,-6,7.4);s.D(0,12,16,9,2);port(s,24,38)}),
+    Converter:mk(s=>{s.B(0,0,15.4,15.4,2);s.Dc(0,0,5.6);s.Lc(0,0,4);s.Lc(0,0,2.2)}),
+    QuantumEncoder:mk(s=>{s.B(0,0,21,47,3);s.Dc(0,-12,8);s.Lc(0,-12,6);s.D(0,8,15,18,2);s.Lc(0,8,3.4)}),
+    MinerMk1:mk(s=>{s.B(0,-1.5,5.4,10.4,1.2);s.Dc(0,3.8,3);s.Lc(0,3.8,1.9);s.Lc(0,3.8,.8);s.D(0,-4,3.4,3,.6)}),
+    OilPump:mk(s=>{s.B(0,0,7.4,13.4,1.4);s.Dc(0,3,3);s.Lc(0,3,1.8);s.D(0,-3.6,5,3.6,.8)}),
+    WaterPump:mk(s=>{s.B(0,0,19.4,19,2.4);s.Dc(0,1.5,7.2);s.Lc(0,1.5,5.6);s.Lc(0,1.5,3.6);s.D(0,-7.6,8,3,.8)}),
+    FrackingSmasher:mk(s=>{s.Bc(0,0,9.8);s.Dc(0,0,5.5);s.Lc(0,0,3.8);s.Lc(0,0,7.6)}),
+    FrackingExtractor:mk(s=>{s.Bc(0,0,1.9);s.Dc(0,0,1);s.Lc(0,0,.5)}),
+    GeneratorCoal:mk(s=>{s.B(0,0,9.6,25.4,1.6);s.Dc(-2.1,-8.4,2);s.Dc(2.1,-8.4,2);s.Lc(-2.1,-8.4,1.1);s.Lc(2.1,-8.4,1.1);s.D(0,3,7.4,11,1);s.Ll([-3.7,1,3.7,1]);s.Ll([-3.7,5,3.7,5])}),
+    GeneratorFuel:mk(s=>{s.B(0,0,19.4,19.4,2.4);[[-4.8,-4.8],[4.8,-4.8],[-4.8,4.8],[4.8,4.8]].forEach(([x,y])=>{s.Dc(x,y,3.3);s.Lc(x,y,2)})}),
+    GeneratorNuclear:mk(s=>{s.B(0,0,35,42,3);[[-9,-10],[9,-10],[-9,10],[9,10]].forEach(([x,y])=>{s.Dc(x,y,7.2);s.Lc(x,y,5.2)});s.D(0,0,8,8,1)}),
+    GeneratorGeoThermal:mk(s=>{s.Bc(0,0,9.6);s.Dc(0,0,6.2);s.Lc(0,0,4.2);s.Lc(0,0,2.2)}),
+    GeneratorIntegratedBiomass:mk(s=>{s.B(0,0,7.4,7.4,1.6);s.Dc(0,0,2.4);s.Lc(0,0,1.3)}),
+    StorageContainerMk1:mk(s=>{s.B(0,0,4.6,9.6,.6);s.D(0,0,3.2,8.2,.3);for(let y=-3;y<=3;y+=1.5)s.Ll([-1.6,y,1.6,y])}),
+    StoragePlayer:mk(s=>{s.B(0,0,1.8,3.6,.3);s.D(0,0,1,2.8,.2)}),
+    StorageIntegrated:mk(s=>{s.B(0,0,2.8,2.8,.4);s.D(0,0,1.8,1.8,.3)}),
+    CentralStorage:mk(s=>{s.B(0,0,4.6,4.6,.8);s.Dc(0,0,1.6);s.Lc(0,0,.8)}),
+    IndustrialTank:mk(s=>{s.Bc(0,0,7.8);s.Dc(0,0,6);s.Lc(0,0,4)}),
+    PipeStorageTank:mk(s=>{s.Bc(0,0,3.8);s.Dc(0,0,2.8);s.Lc(0,0,1.7)}),
+    ResourceSink:mk(s=>{s.B(0,0,15.4,12.6,2);s.Dc(0,-.5,5);s.Lc(0,-.5,3.6);s.Lc(0,-.5,1.6)}),
+    ResourceSinkShop:mk(s=>{s.B(0,0,3.6,3.6,.6);s.D(0,0,2.2,1.4,.3)}),
+    SpaceElevator:mk(s=>{const o=[];for(let i=0;i<8;i++){const a=(i+.5)*Math.PI/4;o.push(26*Math.cos(a),26*Math.sin(a))}s.Bp(o);s.Dc(0,0,16);s.Lc(0,0,12);s.Lc(0,0,6)}),
+    TradingPost:mk(s=>{s.B(0,0,19.4,9.6,1.6);s.D(-5,0,7,6,1);s.Dc(5,0,2.6);s.Lc(5,0,1.4)}),
+    Mam:mk(s=>{s.B(0,0,6.6,9.6,1.2);s.Dc(0,-1,2.4);s.Lc(0,-1,1.2)}),Workshop:mk(s=>{s.B(0,0,5.6,9.6,1);s.D(0,0,3.6,6,.6)}),
+    WorkBench:mk(s=>{s.B(0,0,3.6,2.4,.4);s.D(0,0,2.4,1.2,.2)}),HubTerminal:mk(s=>{s.Bc(0,0,.9);s.Dc(0,0,.5)}),
+    TruckStation:mk(s=>{s.B(0,0,15.4,19.4,1.6);s.D(-3.5,0,6,16,.8);s.L(4,0,5.4,8,.6)}),
+    TrainStation:mk(s=>{s.B(0,0,15.4,23.4,1.6);s.D(0,0,5,22,.4);s.Ll([-2.5,-11,-2.5,11]);s.Ll([2.5,-11,2.5,11])}),
+    DroneStation:mk(s=>{s.B(0,0,23,23,2.4);s.Dc(0,0,8.4);s.Lc(0,0,6.6);s.Ll([-2.4,-3,-2.4,3]);s.Ll([2.4,-3,2.4,3]);s.Ll([-2.4,0,2.4,0])}),
+    PowerStorageMk1:mk(s=>{s.B(0,0,5.6,5.6,.8);s.D(0,0,3.6,3.6,.4);s.Ll([0,-1.4,0,1.4])}),
+    ConveyorAttachmentSplitter:mk(s=>{s.B(0,0,3.6,3.6,.5);s.Dp([0,-1.3,1.3,.6,-1.3,.6])}),
+    ConveyorAttachmentMerger:mk(s=>{s.B(0,0,3.6,3.6,.5);s.Dp([0,1.3,1.3,-.6,-1.3,-.6])}),
+    ConveyorAttachmentSplitterSmart:mk(s=>{s.B(0,0,3.6,3.6,.5);s.Dp([0,-1.3,1.3,.6,-1.3,.6]);s.Lc(0,0,.45)}),
+    PipelineJunction_Cross:mk(s=>{s.Bp([-.5,-1.6,.5,-1.6,.5,-.5,1.6,-.5,1.6,.5,.5,.5,.5,1.6,-.5,1.6,-.5,.5,-1.6,.5,-1.6,-.5,-.5,-.5]);s.Dc(0,0,.45)}),
+    PipelineJunction_T:mk(s=>{s.Bp([-1.6,-.5,1.6,-.5,1.6,.5,.5,.5,.5,1.6,-.5,1.6,-.5,.5,-1.6,.5]);s.Dc(0,0,.45)}),
+    PipelinePump:mk(s=>{s.B(0,0,1.6,2.4,.4);s.Dc(0,0,.6)}),
+    PowerPoleMk1:mk(s=>{s.Bc(0,0,.6);s.Dc(0,0,.3)}),
+    PowerSwitch:mk(s=>{s.B(0,0,1.6,1.2,.2);s.D(0,0,.8,.5,.1)}),
+    PipeHyperStart:mk(s=>{s.B(0,0,3.6,3.6,1.2);s.Dc(0,0,1.2)}),
+    BP_Truck:mk(s=>{s.B(0,0,3.4,8,1);s.D(0,-2.6,3,2,.6)}),BP_Tractor:mk(s=>{s.B(0,0,2.8,5.4,.9);s.D(0,-1.6,2.4,1.6,.5)}),
+    BP_Explorer:mk(s=>{s.B(0,0,2.8,5.4,.9);s.D(0,-1.4,2.4,1.6,.5)}),BP_Golfcart:mk(s=>{s.B(0,0,1.6,2.6,.5);s.D(0,-.4,1.2,1,.3)}),
+    BP_ProjectAssembly:mk(s=>{s.Bc(0,0,14.6);s.Dc(0,0,10);s.Lc(0,0,7);s.Lc(0,0,3)})};
+  const alias={MinerMk2:'MinerMk1',MinerMk3:'MinerMk1',StorageContainerMk2:'StorageContainerMk1',GeneratorBiomass_Automated:'GeneratorIntegratedBiomass',
+    WorkBenchIntegrated:'WorkBench',PowerPoleMk2:'PowerPoleMk1',PowerPoleMk3:'PowerPoleMk1',PriorityPowerSwitch:'PowerSwitch',PipelinePumpMk2:'PipelinePump',
+    ConveyorAttachmentSplitterProgrammable:'ConveyorAttachmentSplitterSmart',ConveyorAttachmentSplitterLift:'ConveyorAttachmentSplitter',ConveyorAttachmentMergerLift:'ConveyorAttachmentMerger',
+    ConveyorAttachmentMergerPriority:'ConveyorAttachmentMerger',TruckStation:'TruckStation'};
+  const lift=mk(s=>{s.B(0,0,1.8,1.8,.4);s.Dc(0,0,.55)});
+  const gen={};
+  return k=>{if(S[k])return S[k];if(alias[k])return S[alias[k]];if(/Lift/.test(k))return lift;if(/^PowerPole/.test(k))return S.PowerPoleMk1;return null}})();
 function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   const tm=(x,y)=>w2m(lM(x),lM(y)),u=MSZ/(MAPF.b.x1-MAPF.b.x0)*100; /* map units per metre */
   const rect=(x,y,yaw,sx,sy)=>{const c=tm(x,y),a=yaw*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a),hx=sx*u/2,hy=sy*u/2;
     return[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([px,py])=>[c.x+px*ca-py*sa,c.y+px*sa+py*ca])};
-  const P={sloop:new Path2D(),f:new Path2D(),wall:new Path2D(),wire:new Path2D(),belt:LBELT.map(()=>new Path2D()),pipe:LPIPE.map(()=>new Path2D()),tube:new Path2D(),cat:{}};
+  const P={lv:LCAT.reduce((o,c)=>(o[c[0]]=[0,1,2,3].map(()=>new Path2D()),o),{}),dk:new Path2D(),lt:new Path2D(),sloop:new Path2D(),f:new Path2D(),wall:new Path2D(),wire:new Path2D(),belt:LBELT.map(()=>new Path2D()),pipe:LPIPE.map(()=>new Path2D()),tube:new Path2D(),cat:{}};
   LCAT.forEach(c=>P.cat[c[0]]=new Path2D());
   const addPoly=(p,pts)=>{p.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)p.lineTo(pts[i][0],pts[i][1]);p.closePath()};
   d.f.forEach(([ci,x,y,z,yaw])=>{const c=d.cls[ci];if(/Wall/.test(c))addPoly(P.wall,rect(x,y,yaw,.5,8));else addPoly(P.f,rect(x,y,yaw,8,8))});
   const bl=d.b.map(([ci,x,y,z,yaw,info])=>{const cls=d.cls[ci],k=lKey(cls),fp=LFP[k]||LFP[k.replace(/Mk\d$/,'Mk1')]||(/Lift/.test(k)?[2,2]:[3,3]),cat=lCat(cls),pts=rect(x,y,yaw,fp[0],fp[1]);
-    addPoly(P.cat[cat[0]],pts);if(info&&info.sl)addPoly(P.sloop,pts);const c=tm(x,y);return{cls,x:lM(x),y:lM(y),z:lM(z),info:info||{},cat,pts,mx:c.x,my:c.y,small:fp[0]*fp[1]<=16}});
+    const c=tm(x,y),gs=lShp(k)||lShp(k.replace(/Mk\d$/,'Mk1')),sh=gs?null:LSH(k);
+    if(gs){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u);gs.forEach((q,i)=>P.lv[cat[0]][i].addPath(q,m))}
+    else if(sh){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u);P.cat[cat[0]].addPath(sh.b,m);P.dk.addPath(sh.d,m);P.lt.addPath(sh.l,m)}else addPoly(P.cat[cat[0]],pts);
+    if(info&&info.sl)addPoly(P.sloop,pts);return{cls,x:lM(x),y:lM(y),z:lM(z),info:info||{},cat,pts,mx:c.x,my:c.y,small:fp[0]*fp[1]<=16}});
   const line=(p,flat)=>{let c=tm(flat[0],flat[1]);p.moveTo(c.x,c.y);for(let i=2;i<flat.length;i+=2){c=tm(flat[i],flat[i+1]);p.lineTo(c.x,c.y)}};
   d.belts.forEach(([t,z,f])=>line(P.belt[Math.min(t,6)],f));d.pipes.forEach(([t,z,f])=>line(P.pipe[t===2?2:1],f));(d.tubes||[]).forEach(([t,z,f])=>line(P.tube,f));
   d.wires.forEach(([a,b,c,e])=>line(P.wire,[a,b,c,e]));
@@ -2407,10 +2479,23 @@ function liveAgo(){if(!LIVE.d)return'';const m=Math.max(0,Math.round((Date.now()
 function livePaint(g){const P=LIVE.paths;if(!P||!MAPF.live.on)return;const L=MAPF.live,px=1/MV.z,u=LIVE.u;
   if(L.f){g.fillStyle='rgba(28,32,40,.62)';g.fill(P.f);if(MV.z*u*8>10){g.strokeStyle='rgba(255,255,255,.10)';g.lineWidth=px;g.stroke(P.f)}
     g.fillStyle='rgba(180,186,198,.75)';g.fill(P.wall)}
-  if(L.pipe){g.lineCap='round';g.lineJoin='round';LPIPE.forEach((c,i)=>{if(i){g.strokeStyle=c;g.lineWidth=Math.max(1.3*px,.9*u);g.stroke(P.pipe[i])}});
+  const det=MV.z*u>1.1; /* screen pixels per metre: past this, outlines and details are worth drawing */
+  if(L.pipe){g.lineCap='round';g.lineJoin='round';
+    if(det){g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1.25*u;LPIPE.forEach((c,i)=>{if(i)g.stroke(P.pipe[i])});g.lineWidth=1.55*u;g.stroke(P.tube)}
+    LPIPE.forEach((c,i)=>{if(i){g.strokeStyle=c;g.lineWidth=Math.max(1.3*px,.9*u);g.stroke(P.pipe[i])}});
     g.strokeStyle='#d9dde5';g.lineWidth=Math.max(1.3*px,1.2*u);g.stroke(P.tube)}
-  if(L.belt){g.lineCap='round';g.lineJoin='round';LBELT.forEach((c,i)=>{g.strokeStyle=c;g.lineWidth=Math.max(1.3*px,1.2*u);g.stroke(P.belt[i])})}
-  if(L.b){if(L.sloop)g.globalAlpha=.35;g.lineWidth=Math.max(px,.15*u);g.strokeStyle='rgba(0,0,0,.55)';LCAT.forEach(c=>{g.fillStyle=c[2];g.fill(P.cat[c[0]]);if(MV.z*u*4>6)g.stroke(P.cat[c[0]])});g.globalAlpha=1}
+  if(L.belt){g.lineCap='round';g.lineJoin='round';
+    if(det){g.strokeStyle='rgba(0,0,0,.5)';g.lineWidth=1.6*u;LBELT.forEach((c,i)=>g.stroke(P.belt[i]))}
+    LBELT.forEach((c,i)=>{g.strokeStyle=c;g.lineWidth=Math.max(1.3*px,1.2*u);g.stroke(P.belt[i])});
+    if(MV.z*u>5){g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=.12*u;g.setLineDash([.25*u,.75*u]);LBELT.forEach((c,i)=>g.stroke(P.belt[i]));g.setLineDash([])}}
+  if(L.b){if(L.sloop)g.globalAlpha=.35;g.lineJoin='round';g.lineWidth=Math.max(px,.18*u);g.strokeStyle='rgba(0,0,0,.6)';
+    LCAT.forEach(c=>{g.fillStyle=c[2];g.fill(P.cat[c[0]]);if(MV.z*u*4>6)g.stroke(P.cat[c[0]])});
+    if(det){g.fillStyle='rgba(0,0,0,.32)';g.fill(P.dk);g.lineWidth=Math.max(.6*px,.1*u);g.strokeStyle='rgba(0,0,0,.45)';g.stroke(P.dk);
+      g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=Math.max(.7*px,.16*u);g.stroke(P.lt)}
+    /* game-shape buildings: lowest parts first, darker the lower they sit */
+    const shade=[.42,.26,.12,0];g.lineWidth=Math.max(.6*px,.08*u);g.strokeStyle='rgba(0,0,0,.7)';
+    for(let i=0;i<4;i++)LCAT.forEach(c=>{const q=P.lv[c[0]][i];g.fillStyle=c[2];g.fill(q);if(shade[i]){g.fillStyle=`rgba(0,0,0,${shade[i]})`;g.fill(q)}if(det)g.stroke(q)});
+    g.globalAlpha=1}
   if(L.wire){g.strokeStyle='rgba(255,226,92,.55)';g.lineWidth=Math.max(.8*px,.25*u);g.stroke(P.wire)}
   if(L.sloop&&P.sloop){g.lineJoin='round';g.strokeStyle='rgba(255,95,168,.45)';g.lineWidth=Math.max(9*px,2.4*u);g.stroke(P.sloop);g.fillStyle='#ff5fa8';g.fill(P.sloop);g.strokeStyle='#fff';g.lineWidth=Math.max(1.6*px,.3*u);g.stroke(P.sloop)}
   if(typeof LPIN!=='undefined'&&LPIN&&LPIN.b){const q=LPIN.b.pts;g.beginPath();g.moveTo(q[0][0],q[0][1]);q.slice(1).forEach(p=>g.lineTo(p[0],p[1]));g.closePath();
