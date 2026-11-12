@@ -53,7 +53,7 @@ def spline_world(h, pts):
 
 SKIP = re.compile(r'Sign|Ladder|VehiclePath|ConveyorPole|PipelineSupport|PipeHyperSupport|'
                   r'WallHole|CeilingAttachment|FoundationPassthrough|FlowIndicator|StreetLight|'
-                  r'PowerTowerPlatform|ConveyorMonitor|Potty|PowerPoleWall')
+                  r'ConveyorMonitor|Potty|PowerPoleWall')
 
 
 COLLECT = re.compile(r'^(BP_Crystal|BP_WAT|BP_DropPod)')
