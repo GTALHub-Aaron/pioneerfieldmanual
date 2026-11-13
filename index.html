@@ -2406,7 +2406,7 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   const rectB=(x,y,yaw,b)=>{const c=tm(x,y),a=yaw*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a);
     return[[b[0],b[2]],[b[1],b[2]],[b[1],b[3]],[b[0],b[3]]].map(([px,py])=>[c.x+(px*ca-py*sa)*u,c.y+(px*sa+py*ca)*u])};
   const P={lz:new Map(),dk:new Path2D(),lt:new Path2D(),sloop:new Path2D(),f:new Path2D(),wall:new Path2D(),wire:new Path2D(),belt:LBELT.map(()=>new Path2D()),pipe:LPIPE.map(()=>new Path2D()),tube:new Path2D(),cat:{}};
-  LCAT.forEach(c=>P.cat[c[0]]=new Path2D());
+  LCAT.forEach(c=>{P.cat[c[0]]=new Path2D();P.cat[c[0]+'B']=new Path2D()});P.dkB=new Path2D();P.ltB=new Path2D();
   const addPoly=(p,pts)=>{p.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)p.lineTo(pts[i][0],pts[i][1]);p.closePath()};
   d.f.forEach(([ci,x,y,z,yaw])=>{const c=d.cls[ci];if(/Wall/.test(c))addPoly(P.wall,rect(x,y,yaw,.5,8));else addPoly(P.f,rect(x,y,yaw,8,8))});
   /* pipe ends, bucketed by ~4 m cells, so each pipe junction can draw its arms toward the pipes actually attached to it (yaw alone gets the T the wrong way round) */
@@ -2417,15 +2417,15 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   const juncArms=(x,y)=>{const X=lM(x),Y=lM(y),A=[];const cx=Math.round(X/400),cy=Math.round(Y/400);
     for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)(PE.get((cx+i)+','+(cy+j))||[]).forEach(([px,py,dx,dy])=>{const r=Math.hypot(px-X,py-Y);if(r>180)return;
       const a=r>40?Math.atan2(py-Y,px-X):Math.atan2(dy,dx),o=A.find(q=>Math.abs(Math.atan2(Math.sin(a-q[0]),Math.cos(a-q[0])))<.5);if(o)o[1]=Math.max(o[1],r);else A.push([a,r])});return A};
-  const bl=d.b.map(([ci,x,y,z,yaw,info])=>{const cls=d.cls[ci],k=lKey(cls),fp=LFP[k]||LFP[k.replace(/Mk\d$/,'Mk1')]||(/Lift/.test(k)?[2,2]:[3,3]),cat=lCat(cls),bx=lBox(k)||lBox(k.replace(/Mk\d$/,'Mk1'))||lBox(LALIAS[k]),pts=bx?rectB(x,y,yaw,bx):rect(x,y,yaw,fp[0],fp[1]);
+  const bl=d.b.map(([ci,x,y,z,yaw,info])=>{const cls=d.cls[ci],k=lKey(cls),fp=LFP[k]||LFP[k.replace(/Mk\d$/,'Mk1')]||(/Lift/.test(k)?[2,2]:[3,3]),cat=lCat(cls),ck0=cat[0]+(/^ConveyorLift|^ConveyorAttachment/.test(k)?'B':''),bx=lBox(k)||lBox(k.replace(/Mk\d$/,'Mk1'))||lBox(LALIAS[k]),pts=bx?rectB(x,y,yaw,bx):rect(x,y,yaw,fp[0],fp[1]);
     const c=tm(x,y),gs=lShp(k)||lShp(k.replace(/Mk\d$/,'Mk1'))||lShp(LALIAS[k]),sh=gs?null:LSH(k);
     const ja=/^PipelineJunction/.test(k)?juncArms(x,y):null;
     /* T junction: turn the drawing so its stem points at the one pipe that has no pipe opposite it */
     if(ja&&k==='PipelineJunction_T'&&ja.length>=3){const opp=(p,q)=>Math.abs(Math.atan2(Math.sin(p-q-Math.PI),Math.cos(p-q-Math.PI)))<.5,st=ja.find(([p])=>!ja.some(([q])=>opp(p,q)));if(st)yaw=st[0]*180/Math.PI-90}
     else if(ja&&ja.length)yaw=ja[0][0]*180/Math.PI;
-    if(ja){const h=.75*u,q=new Path2D();q.roundRect(c.x-h,c.y-h,2*h,2*h,.3*u);P.cat[cat[0]].addPath(q);const o=new Path2D();o.arc(c.x,c.y,.35*u,0,7);P.dk.addPath(o)}   /* junction: a small hub where the pipes meet; the pipes themselves show the T or cross */
-    else if(gs){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u),L=lvAt(z,cat[0],/Integrated|HubTerminal/.test(cls)?1:0);   /* the HUB's own fittings sit on its deck: draw them above it */gs.forEach(([n,q])=>(L[n]||(L[n]=new Path2D())).addPath(q,m))}
-    else if(sh){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u);P.cat[cat[0]].addPath(sh.b,m);P.dk.addPath(sh.d,m);P.lt.addPath(sh.l,m)}else addPoly(P.cat[cat[0]],pts);
+    if(ja){const h=.75*u,q=new Path2D();q.roundRect(c.x-h,c.y-h,2*h,2*h,.3*u);P.cat[ck0].addPath(q);const o=new Path2D();o.arc(c.x,c.y,.35*u,0,7);P.dk.addPath(o)}   /* junction: a small hub where the pipes meet; the pipes themselves show the T or cross */
+    else if(gs){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u),L=lvAt(z,ck0,/Integrated|HubTerminal/.test(cls)?1:0);   /* the HUB's own fittings sit on its deck: draw them above it */gs.forEach(([n,q])=>(L[n]||(L[n]=new Path2D())).addPath(q,m))}
+    else if(sh){const m=new DOMMatrix().translateSelf(c.x,c.y).rotateSelf(yaw).scaleSelf(u);P.cat[ck0].addPath(sh.b,m);const bp=ck0!==cat[0];(bp?P.dkB:P.dk).addPath(sh.d,m);(bp?P.ltB:P.lt).addPath(sh.l,m)}else addPoly(P.cat[ck0],pts);
     if(info&&info.sl)addPoly(P.sloop,pts);return{cls,x:lM(x),y:lM(y),z:lM(z),info:info||{},cat,pts,mx:c.x,my:c.y,small:fp[0]*fp[1]<=16}});
   /* buildings with game shapes are grouped by floor height (1 m steps) and painted bottom floor first, so a machine on a higher platform sits over one below it */
   function lvAt(z,k,up){const zb=Math.floor(lM(z)/100)+(up||0);let B=P.lz.get(zb);if(!B)P.lz.set(zb,B={});return B[k]||(B[k]=[])}
@@ -2528,12 +2528,13 @@ function livePaint(g){const P=LIVE.paths;if(!P||!MAPF.live.on)return;const L=MAP
     LBELT.forEach((c,i)=>{g.strokeStyle=c;g.lineWidth=Math.max(1.3*px,1.2*u);g.stroke(P.belt[i])});
     if(MV.z*u>5){g.strokeStyle='rgba(0,0,0,.28)';g.lineWidth=.12*u;g.setLineDash([.25*u,.75*u]);LBELT.forEach((c,i)=>g.stroke(P.belt[i]));g.setLineDash([])}}
   if(L.b){if(L.sloop)g.globalAlpha=.35;g.lineJoin='round';g.lineWidth=Math.max(px,.18*u);g.strokeStyle='rgba(0,0,0,.6)';
-    LCAT.forEach(c=>{g.fillStyle=c[2];g.fill(P.cat[c[0]]);if(MV.z*u*4>6)g.stroke(P.cat[c[0]])});
-    if(det){g.fillStyle='rgba(0,0,0,.32)';g.fill(P.dk);g.lineWidth=Math.max(.6*px,.1*u);g.strokeStyle='rgba(0,0,0,.45)';g.stroke(P.dk);
-      g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=Math.max(.7*px,.16*u);g.stroke(P.lt)}
+    const LCB=L.belt?[...LCAT,...LCAT.map(c=>[c[0]+'B',c[1],c[2]])]:LCAT;   /* splitters, mergers and lifts belong with the belts: hidden when Belts is off */
+    LCB.forEach(c=>{g.fillStyle=c[2];g.fill(P.cat[c[0]]);if(MV.z*u*4>6)g.stroke(P.cat[c[0]])});
+    if(det)(L.belt?[[P.dk,P.lt],[P.dkB,P.ltB]]:[[P.dk,P.lt]]).forEach(([dk,lt])=>{g.fillStyle='rgba(0,0,0,.32)';g.fill(dk);g.lineWidth=Math.max(.6*px,.1*u);g.strokeStyle='rgba(0,0,0,.45)';g.stroke(dk);
+      g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=Math.max(.7*px,.16*u);g.stroke(lt)});
     /* game-shape buildings: lowest parts first, darker the lower they sit */
     const shade=[.42,.26,.12,0];g.lineWidth=Math.max(.6*px,.08*u);g.strokeStyle='rgba(0,0,0,.7)';
-    [...P.lz.keys()].sort((a,b)=>a-b).forEach(zb=>{const B=P.lz.get(zb),cs=LCAT.filter(c=>B[c[0]]);
+    [...P.lz.keys()].sort((a,b)=>a-b).forEach(zb=>{const B=P.lz.get(zb),cs=LCB.filter(c=>B[c[0]]);
       for(let n=0;n<32;n++)cs.forEach(c=>{const q=B[c[0]][n];if(!q)return;const i=n>>3;if(i&&det){const o=.28*u;g.save();g.translate(o,o);g.fillStyle='rgba(0,0,0,.32)';g.fill(q);g.restore()}g.fillStyle=c[2];g.fill(q);if(shade[i]){g.fillStyle=`rgba(0,0,0,${shade[i]})`;g.fill(q)}if(det)g.stroke(q)});
       /* level 6: recesses (a hatch sunk into a raised frame), filled evenly in deep shadow */
       if(det)cs.forEach(c=>{const q=B[c[0]][34];if(q){g.fillStyle=c[2];g.fill(q);g.fillStyle='rgba(0,0,0,.5)';g.fill(q);g.stroke(q)}});
@@ -2560,7 +2561,7 @@ function livePlayers(g,S2,on){if(!LIVE.pl.length||!MAPF.live.pl)return;g.font='6
 function liveHit(cx,cy){if(!LIVE.paths||!MAPF.live.on)return null;const mx=(cx-MV.x)/MV.z,my=(cy-MV.y)/MV.z;
   if(MAPF.live.pl)for(const p of LIVE.pl)if(Math.hypot(MV.x+p.mx*MV.z-cx,MV.y+p.my*MV.z-cy)<10)return{pl:p};
   if(!MAPF.live.b)return null;const tol=4/MV.z;let best=null,bd=Infinity;
-  for(const b of LIVE.bl){if(Math.abs(b.mx-mx)>40||Math.abs(b.my-my)>40)continue;
+  for(const b of LIVE.bl){if(Math.abs(b.mx-mx)>40||Math.abs(b.my-my)>40)continue;if(!MAPF.live.belt&&/ConveyorLift|ConveyorAttachment/.test(b.cls))continue;
     let inside=true;const q=b.pts;for(let i=0;i<4;i++){const [ax,ay]=q[i],[bx,by]=q[(i+1)%4];if((bx-ax)*(my-ay)-(by-ay)*(mx-ax)<-tol*Math.hypot(bx-ax,by-ay)){inside=false;break}}
     if(inside){const d=Math.hypot(b.mx-mx,b.my-my)+(b.small?0:1e3);if(d<bd){bd=d;best=b}}}
   return best&&{b:best}}
