@@ -623,7 +623,8 @@ a.wun:hover .wun-n{color:var(--accent);text-decoration:underline;text-underline-
 .wsch .wmut{margin-right:2px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;min-width:92px}
 .wtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .wtiles a{display:flex;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:inherit;text-decoration:none}
-.wtiles a:hover{border-color:var(--accent)}.wtiles b{font-family:var(--f-display);font-size:18px;font-weight:600}.wtiles span{font-size:12.5px;color:var(--muted)} .lfind{margin:10px 0 4px}.lfind input{width:100%;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px;color:var(--fg)}
+.wtiles a:hover{border-color:var(--accent)}.wtiles b{font-family:var(--f-display);font-size:18px;font-weight:600}.wtiles span{font-size:12.5px;color:var(--muted)} .se-time{display:inline-flex;align-items:center;gap:8px;margin:4px 0 6px;font-size:13px}.se-time select{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:4px 6px;color:var(--fg)}
+ .se-ph{margin-top:14px}.se-h{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.se-h h2{margin:0}.se-un{margin:6px 0 0;font-size:13px} .se-tot{margin-top:8px}.se-tot summary{cursor:pointer;font-weight:600;font-size:13.5px}.se-mx th,.se-mx td{font-size:12.5px}.se-mx th:not(:first-child){text-align:right}.se-slc{text-align:center}.se-fold{margin-left:10px;font-size:11.5px;text-transform:none;letter-spacing:0}.se-sl{display:inline-flex;align-items:center;gap:4px;background:none;border:1px solid var(--line);border-radius:12px;padding:2px 7px;cursor:pointer;opacity:.45;color:inherit;font:inherit;font-size:12px}.se-sl img{width:16px;height:16px}.se-sl.on{opacity:1;border-color:#ff5fa8;background:rgba(255,95,168,.12)}.se-sl:hover{opacity:1}.se-on td{background:rgba(255,95,168,.06)} .se-grp th{text-align:left!important;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);background:var(--panel-2)} .se-main{table-layout:fixed;width:100%}.se-main th:nth-child(2),.se-main th:nth-child(3){width:24%}.se-ph .wt td{vertical-align:middle}.se-mx th{white-space:normal;line-height:1.25;vertical-align:bottom} .lfind{margin:10px 0 4px}.lfind input{width:100%;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px;color:var(--fg)}
  .lf-sug,.lf-list{display:flex;flex-direction:column;gap:2px;margin-top:6px;max-height:300px;overflow:auto}
  .lf-sug button,.lf-list button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:4px;padding:4px 6px;color:inherit;font:inherit;font-size:12.5px;cursor:pointer}
  .lf-sug button:hover,.lf-list button:hover{border-color:var(--accent);background:var(--panel-2)}
@@ -3093,6 +3094,59 @@ function wSchCard(s){const parts=[];
   const its=[...new Set(s.r.map(id=>RMAP[id]).filter(Boolean).map(r=>r.out[0][0]))];if(its.length)parts.push(`<div><span class="wmut">Recipes for</span> ${its.map(i=>wLink(i)).join('')}</div>`);
   if(s.w.length)parts.push(`<div><span class="wmut">Workshop</span> ${s.w.map(i=>wLink(i)).join('')}</div>`);
   return`<div class="wsch"><div class="wsch-h"><b>${esc(s.n)}</b>${s.cost.length?`<span class="wcost sm">${wAmt(s.cost)}</span>`:''}</div>${s.req.length&&s.t==='mam'?`<div class="wsm wmut">Needs ${s.req.map(esc).join(', ')}</div>`:''}${parts.join('')||'<div class="wmut wsm">Upgrades and extras</div>'}</div>`}
+
+/* ---- Space Elevator phases (default 1× cost) ---- */
+const W_SE=[[1,'Distribution Platform',[['Smart Plating',50]],'Tiers 3 and 4'],
+  [2,'Construction Dock',[['Smart Plating',1000],['Versatile Framework',1000],['Automated Wiring',100]],'Tiers 5 and 6'],
+  [3,'Main Body',[['Versatile Framework',2500],['Modular Engine',500],['Adaptive Control Unit',100]],'Tiers 7 and 8'],
+  [4,'Propulsion',[['Assembly Director System',500],['Magnetic Field Generator',500],['Thermal Propulsion Rocket',250],['Nuclear Pasta',100]],'Tier 9'],
+  [5,'Assembly',[['Nuclear Pasta',1000],['Biochemical Sculptor',1000],['AI Expansion Server',256],['Ballistic Warp Drive',200]],'Project Assembly launch, and the Employee of the Planet cup in the AWESOME Shop']];
+let W_SETIME=60;try{W_SETIME=+localStorage.getItem('pfm-se-time')||60}catch(e){}
+const W_SETIMES=[[30,'30 minutes'],[60,'1 hour'],[120,'2 hours'],[240,'4 hours'],[480,'8 hours'],[1440,'24 hours']];
+function wElevatorPage(){const tl=(W_SETIMES.find(t=>t[0]===W_SETIME)||[0,W_SETIME+' minutes'])[1];
+  return`<div class="whead"><div><div class="wkick">Progression</div><h1>Space Elevator</h1></div>${wStar('elevator')}</div>`+
+    `<p class="wmut">What each phase needs delivered to the Space Elevator, and what it unlocks. Amounts are for the default cost; worlds made with a different Space Elevator cost setting need more or less. <b>Plan this phase</b> puts each part in the planner as a goal sized to finish in the time you pick, and builds its whole production chain.</p>`+
+    `<label class="f se-time">Finish each phase in <select data-setime>${W_SETIMES.map(([v,l])=>`<option value="${v}"${v===W_SETIME?' selected':''}>${l}</option>`).join('')}</select></label>`+
+    W_SE.map(([n,name,parts,un])=>`<section class="se-ph"><div class="se-h"><h2>Phase ${n} · ${esc(name)}</h2><button type="button" class="btn" data-sephase="${n}">Plan this phase</button></div>`+
+      `<div class="wtw"><table class="wt se-main"><thead><tr><th>Part</th><th>Amount</th><th>Per minute for ${esc(tl)}</th></tr></thead><tbody>${parts.map(([i,q])=>`<tr><td>${wLink(i)}</td><td class="wn2">${q.toLocaleString()}</td><td class="wn2">${fmt(q/W_SETIME)}</td></tr>`).join('')}</tbody></table></div>`+
+      `<p class="se-un"><span class="wbadge k-ms">Unlocks</span> ${esc(un)}</p>${seTotals(n,parts)}</section>`).join('')}
+
+/* everything a phase takes: each part worked down to raw resources with your default recipes (byproducts not counted), part by part and in total.
+   Steps marked for Somersloops make twice as much from the same inputs, so everything under them halves; the count is how many sloops the machines need to finish in the chosen time */
+let SE_SL=new Set(),SE_OPEN=new Set(),SE_MID=new Set();try{SE_SL=new Set(JSON.parse(localStorage.getItem('pfm-se-sloops')||'[]'))}catch(e){}
+const seRec=it=>stdRecipe(it)||recipesFor(it)[0]||(W_RECIPES_OUT[it]||[])[0];
+function seExpand(item,q){const acc={top:{},mid:{},raw:{},rec:{}},path=new Set();
+  (function go(it,q,d){if(W_RAW.has(it)){acc.raw[it]=(acc.raw[it]||0)+q;return}
+    const r=seRec(it);if(!r||path.has(it)||d>16){acc.raw[it]=(acc.raw[it]||0)+q;return}
+    acc[d?'mid':'top'][it]=(acc[d?'mid':'top'][it]||0)+q;acc.rec[it]=r;
+    const o=r.out.find(x=>x[0]===it)[1],m=q/(o*(SE_SL.has(it)&&SLOTS[r.bld]?2:1));path.add(it);r.in.forEach(([x,v])=>go(x,v*m,d+1));path.delete(it)})(item,q,0);return acc}
+const seSloops=(it,amt,r)=>{if(!r||!SLOTS[r.bld])return 0;const o=r.out.find(x=>x[0]===it)[1];return Math.ceil(amt/W_SETIME/(o*2)-1e-9)*SLOTS[r.bld]};
+function seTotals(n,parts){const midOpen=SE_MID.has(n);const cols=parts.map(([i,q])=>seExpand(i,q)),rec={};cols.forEach(c=>Object.assign(rec,c.rec));
+  const rows=key=>{const all={};cols.forEach(c=>Object.entries(c[key]).forEach(([k,v])=>all[k]=(all[k]||0)+v));return Object.entries(all).sort((x,y)=>y[1]-x[1])};
+  const cell=v=>v?(v>=100?Math.round(v).toLocaleString():fmt(Math.round(v*10)/10)):'<span class="wmut">–</span>';
+  const im=ICONS['Desc_WAT1_C'];let need=0;
+  const slc=(k,t)=>{const r=rec[k];if(!r||!SLOTS[r.bld])return'<td></td>';const on=SE_SL.has(k),c=on?seSloops(k,t,r):0;need+=c;
+    return`<td class="se-slc"><button type="button" class="se-sl${on?' on':''}" data-sesl="${escA(k)}" aria-pressed="${on}" title="${on?'Stop using':'Use'} Somersloops on the ${escA(r.bld)}s making ${escA(k)}">${im?`<img src="${im}" alt="">`:'◆'}${on?`<span>${c.toLocaleString()}</span>`:''}</button></td>`};
+  const body=(key,title,sl,fold)=>{const rs=rows(key);if(!rs.length)return'';const head=`<tr class="se-grp"><th colspan="${parts.length+3}">${title}${fold?` <button type="button" class="linkb se-fold" data-semid="${n}">${midOpen?'Hide':`Show all ${rs.length}`}</button>`:''}</th></tr>`;if(fold&&!midOpen)return head;return head+rs.map(([k,t])=>`<tr${sl&&SE_SL.has(k)?' class="se-on"':''}><td>${wLink(k)}${wFluid(k)?'<small class="wmut"> m³</small>':''}</td>${cols.map(c=>`<td class="wn2">${cell(c[key][k])}</td>`).join('')}<td class="wn2"><b>${cell(t)}</b></td>${sl?slc(k,t):'<td></td>'}</tr>`).join('')};
+  const tb=body('top','The parts themselves',1)+body('raw','Raw resources',0)+body('mid','Made along the way',1,1);   /* the long list of everyday parts stays folded until asked for */
+  const rawSum=rows('raw').filter(([k])=>k!=='Water').reduce((s,[,v])=>s+v,0);
+  return`<details class="se-tot" data-setot="${n}"${SE_OPEN.has(n)?' open':''}><summary>Everything it takes <span class="wmut">· ${Math.round(rawSum).toLocaleString()} raw resources (not counting water)${need?` · ${need.toLocaleString()} Somersloops`:''}</span></summary>`+
+    `<p class="wmut wsm">Each part worked down to raw resources using your default recipe for every step (standard, or the alternate you've starred). Byproducts aren't subtracted. Click a Somersloop to slot that step: it makes twice as much from the same inputs, so everything under it halves, and the number is how many Somersloops its machines need to finish in the time picked above. <b>Plan this phase</b> builds the whole chain with those machines slotted.</p>`+
+    `<div class="wtw"><table class="wt se-mx"><thead><tr><th>Item</th>${parts.map(([i])=>`<th>${esc(i)}</th>`).join('')}<th>Total</th><th>Sloops</th></tr></thead><tbody>${tb}</tbody></table></div></details>`}
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.setot){const n=+d.dataset.setot;if(d.open)SE_OPEN.add(n);else SE_OPEN.delete(n)}},true);
+document.addEventListener('click',e=>{const f=e.target.closest&&e.target.closest('[data-semid]');if(f){const n=+f.dataset.semid;if(SE_MID.has(n))SE_MID.delete(n);else SE_MID.add(n);const pg=$('#wikiPage'),y=pg.scrollTop;wikiShow('elevator');pg.scrollTop=y;return}
+  const b=e.target.closest&&e.target.closest('[data-sesl]');if(!b)return;const k=b.dataset.sesl;if(SE_SL.has(k))SE_SL.delete(k);else SE_SL.add(k);
+  try{localStorage.setItem('pfm-se-sloops',JSON.stringify([...SE_SL]))}catch(x){}const pg=$('#wikiPage'),y=pg.scrollTop;wikiShow('elevator');pg.scrollTop=y});
+function sePlan(n){const ph=W_SE.find(p=>p[0]===n);if(!ph)return;location.hash='#/planner';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const c=canvas.getBoundingClientRect(),x0=Math.round((c.width/2-V.x)/V.z-150),y0=Math.round((c.height/2-V.y)/V.z-80),goals=[];
+    ph[2].forEach(([i,q],k)=>goals.push(addNode('goal',x0,y0+k*170,{item:i,rate:+(q/W_SETIME).toFixed(3)})));placeFree(new Set(goals.map(g=>g.id)));select(null);
+    const before=new Set(S.nodes.map(x=>x.id));goals.forEach(g=>buildChain(g));
+    /* slot the steps marked for Somersloops on the Space Elevator page, then resize everything for the halved inputs */
+    let sl=0;S.nodes.forEach(x=>{if(before.has(x.id)&&!goals.some(g=>g.id===x.id))return;if(x.kind!=='recipe')return;const r=RMAP[x.recipe],it=r.out[0][0];if(SE_SL.has(it)&&SLOTS[r.bld]){x.sloops=SLOTS[r.bld];sl++}});
+    balance();if($('#autoTidy').checked)arrange();refresh();requestAnimationFrame(fitView);
+    flash(`Planned Phase ${n}: ${goals.length} parts${sl?`, with Somersloops in ${sl} card${sl>1?'s':''}`:''}. Each card's Somersloop setting can still be changed.`)}))}
+document.addEventListener('change',e=>{const s=e.target;if(s&&s.matches&&s.matches('[data-setime]')){W_SETIME=+s.value;try{localStorage.setItem('pfm-se-time',W_SETIME)}catch(x){}wikiShow('elevator')}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-sephase]');if(b)sePlan(+b.dataset.sephase)});
 function wTiersPage(){let h=`<div class="whead"><div><div class="wkick">Progression</div><h1>HUB tiers and milestones</h1></div></div><p class="wmut">What each milestone costs and unlocks. Tier 0 is done at the HUB; later tiers open as you deliver Project Assembly parts.</p>`;
   for(let t=0;t<=9;t++){const ms=W_SCH.filter(s=>(s.t==='hub'||s.t==='ms')&&s.tier===t);if(!ms.length)continue;h+=`<h2>Tier ${t}</h2>`+ms.map(wSchCard).join('')}return h}
 function wMamPage(){const trees=[...new Set(W_SCH.filter(s=>s.t==='mam').map(s=>s.tree))].sort();
@@ -3106,14 +3160,14 @@ function wAltsPage(){const alts=RECIPES.filter(r=>r.alt),on=alts.filter(r=>UNL.a
     `<div class="wtw"><table class="wt"><thead><tr><th>Have</th><th>Recipe</th><th>Makes</th><th>Building</th><th>In, per minute</th><th>Out, per minute</th><th>Research first</th></tr></thead><tbody>`+
     list.map(r=>{const s=(W_RUNL[r.id]||[])[0];return`<tr><td><input type="checkbox" data-walt-id="${r.id}"${UNL.alts[r.id]?' checked':''} aria-label="Unlocked ${escA(r.name)}"></td><td><div class="wrec">${wIco(ITEM_CLS[r.out[0][0]])}<b>${esc(r.name)}</b></div></td><td>${wLink(r.out[0][0])}</td><td>${wBLink(r.bld)}</td><td>${wAmt(r.in)}</td><td>${wAmt(r.out)}</td><td class="wsm">${s&&s.req.length?s.req.map(esc).join(', '):'<span class="wmut">Nothing</span>'}</td></tr>`}).join('')+`</tbody></table></div>`}
 /* wiki home tiles: a game icon beside each title so the eye can find a section without reading every box */
-const W_TICO={tiers:'Desc_TradingPost_C',mam:'Desc_Mam_C',alts:'Desc_HardDrive_C',calc:'Desc_CrystalShard_C',sink:'Desc_ResourceSink_C',power:'Desc_GeneratorFuel_C',belts:'Desc_ConveyorBeltMk1_C',
+const W_TICO={tiers:'Desc_TradingPost_C',elevator:'Desc_SpaceElevator_C',mam:'Desc_Mam_C',alts:'Desc_HardDrive_C',calc:'Desc_CrystalShard_C',sink:'Desc_ResourceSink_C',power:'Desc_GeneratorFuel_C',belts:'Desc_ConveyorBeltMk1_C',
   'Raw resources':'Desc_OreIron_C','Ingots':'Desc_IronIngot_C','Components':'Desc_ModularFrame_C','Project Assembly parts':'Desc_SpaceElevatorPart_1_C','Fluids':'Desc_Water_C','Packaged fluids':'Desc_Fuel_C',
   'Fuel & nuclear':'Desc_NuclearFuelRod_C','Equipment & ammo':'BP_EquipmentDescriptorRifle_C','Organic & alien':'Desc_AlienProtein_C','Collectibles':'Desc_WAT1_C',
   'Production':'Desc_ConstructorMk1_C','Extraction':'Desc_MinerMk2_C','Power':'Desc_GeneratorCoal_C','Logistics':'Desc_ConveyorAttachmentSplitter_C','Transport':'Desc_Locomotive_C','Vehicles':'Desc_Truck_C','Special':'Desc_SpaceElevator_C'};
 const wTile=(href,key,title,sub)=>{const c=W_TICO[key];return`<a href="${href}">${c&&ICONS[c]?`<img class="wti" src="${ICONS[c]}" alt="" draggable="false">`:'<i class="wti"></i>'}<div><b>${title}</b><span>${sub}</span></div></a>`};
 function wHomePage(){const ct={};W_ITEMS.forEach(i=>{const g=wGroup(i);ct[g]=(ct[g]||0)+1});
   return`<div class="whead"><div><div class="wkick">Reference</div><h1>FICSIT wiki</h1></div></div><p class="wmut">Every item, building, recipe and unlock in Satisfactory 1.0, built from the same data as the planner. Search on the left, or start here.</p>`+
-    `<h2>Progression</h2><div class="wtiles">${wTile('#/wiki/tiers','tiers','HUB tiers & milestones','What each tier costs and unlocks')}${wTile('#/wiki/mam','mam','MAM research',`${W_SCH.filter(s=>s.t==='mam').length} research nodes by tree`)}${wTile('#/wiki/alts','alts','Alternate recipes',`${RECIPES.filter(r=>r.alt).length} alternates, tick off the ones you have`)}</div>`+
+    `<h2>Progression</h2><div class="wtiles">${wTile('#/wiki/tiers','tiers','HUB tiers & milestones','What each tier costs and unlocks')}${wTile('#/wiki/elevator','elevator','Space Elevator','What each of the 5 phases needs')}${wTile('#/wiki/mam','mam','MAM research',`${W_SCH.filter(s=>s.t==='mam').length} research nodes by tree`)}${wTile('#/wiki/alts','alts','Alternate recipes',`${RECIPES.filter(r=>r.alt).length} alternates, tick off the ones you have`)}</div>`+
     `<h2>Tools &amp; reference</h2><div class="wtiles">${wTile('#/wiki/calc','calc','Calculators','Overclocking, Somersloops and storage fill times')}${wTile('#/wiki/sink','sink','AWESOME Sink points','Best items to sink per raw resource')}${wTile('#/wiki/power','power','Power &amp; fuels','Every generator and fuel side by side')}${wTile('#/wiki/belts','belts','Belts &amp; pipes','Speeds, and machines per belt for any recipe')}</div>`+
     `<h2>Items</h2><div class="wtiles">${W_IGROUPS.filter(g=>ct[g]).map(g=>wTile(`#/wiki/group/${encodeURIComponent(g)}`,g,g,`${ct[g]} items`)).join('')}</div>`+
     `<h2>Buildings</h2><div class="wtiles">${WIKI.groups.map(([g,l])=>wTile(`#/wiki/bgroup/${encodeURIComponent(g)}`,g,g,`${l.length} buildings`)).join('')}</div>`}
@@ -3122,7 +3176,7 @@ function wGroupPage(g,bld){const list=bld?(WIKI.groups.find(x=>x[0]===g)||[0,[]]
 const wNotFound=()=>`<div class="whead"><div><h1>Page not found</h1></div></div><p><a href="#/wiki">Back to the wiki home</a></p>`;
 function wNav(){const q=($('#wq')||{}).value||'',ql=q.trim().toLowerCase(),hit=s=>!ql||s.toLowerCase().includes(ql),cur=location.hash;
   const li=(href,label,ic='')=>`<a class="wn${decodeURIComponent(cur)===decodeURIComponent(href)?' on':''}" href="${href}">${ic}${esc(label)}</a>`;
-  let h='';const prog=[['#/wiki/tiers','HUB tiers & milestones'],['#/wiki/mam','MAM research'],['#/wiki/alts','Alternate recipes']].filter(([,l])=>hit(l));
+  let h='';const prog=[['#/wiki/tiers','HUB tiers & milestones'],['#/wiki/elevator','Space Elevator'],['#/wiki/mam','MAM research'],['#/wiki/alts','Alternate recipes']].filter(([,l])=>hit(l));
   if(!ql)h+=li('#/wiki','Wiki home');
   if(!ql&&W_FAV.length)h+=`<details${ql||!W_NAVSHUT.has('_fav')?' open':''} data-wg="_fav"><summary>★ Favourites <span class="ct">${W_FAV.length}</span></summary>${W_FAV.map(p=>li('#/wiki/'+p,wPathName(p),wPathIco(p))).join('')}</details>`;
   if(!ql&&W_REC.length)h+=`<details${W_NAVOPEN.has('_rec')?' open':''} data-wg="_rec"><summary>Recently viewed</summary>${W_REC.map(p=>li('#/wiki/'+p,wPathName(p),wPathIco(p))).join('')}</details>`;
@@ -3140,7 +3194,7 @@ function wFoldAll(){const any=!!$('#wList details[open]');
   $('#wList').querySelectorAll('details[data-wg]').forEach(d=>{const k=d.dataset.wg;if(W_FIXED.has(k))any?W_NAVSHUT.add(k):W_NAVSHUT.delete(k);else any?W_NAVOPEN.delete(k):W_NAVOPEN.add(k)});
   wNavSave();wNav()}
 function wikiShow(path){const [kind,...rest]=path.split('/');const arg=decodeURIComponent(rest.join('/')||'');let h;
-  if(!kind)h=wHomePage();else if(kind==='item')h=wItemPage(arg);else if(kind==='building')h=wBuildingPage(arg);else if(kind==='tiers')h=wTiersPage();else if(kind==='mam')h=wMamPage();
+  if(!kind)h=wHomePage();else if(kind==='item')h=wItemPage(arg);else if(kind==='building')h=wBuildingPage(arg);else if(kind==='tiers')h=wTiersPage();else if(kind==='elevator')h=wElevatorPage();else if(kind==='mam')h=wMamPage();
   else if(kind==='alts')h=wAltsPage();else if(kind==='sink')h=wSinkPage();else if(kind==='power')h=wPowerPage();else if(kind==='belts')h=wBeltsPage();else if(kind==='calc')h=wCalcPage();else if(kind==='group')h=wGroupPage(arg,false);else if(kind==='bgroup')h=wGroupPage(arg,true);else h=wNotFound();
   const pg=$('#wikiPage');pg.innerHTML=`<article class="wart">${h}</article>`;pg.scrollTop=0;if(kind==='calc')wCalcRun();
   if(['item','building','sink','power','belts','calc'].includes(kind)&&h!==wNotFound()){W_REC=[path,...W_REC.filter(x=>x!==path)].slice(0,8);wSave()}
@@ -3206,7 +3260,7 @@ function wBreakdown(i){if(W_RAW.has(i)||!(W_RECIPES_OUT[i]||[]).length)return'';
 /* ---------- favourites, recent, unlocked filter ---------- */
 let W_FAV=[],W_REC=[],W_ONLY=false;try{W_FAV=JSON.parse(localStorage.getItem(KEY+'-wfav')||'[]');W_REC=JSON.parse(localStorage.getItem(KEY+'-wrec')||'[]');W_ONLY=localStorage.getItem(KEY+'-wonly')==='1'}catch(e){}
 const wSave=()=>{try{localStorage.setItem(KEY+'-wfav',JSON.stringify(W_FAV));localStorage.setItem(KEY+'-wrec',JSON.stringify(W_REC));localStorage.setItem(KEY+'-wonly',W_ONLY?'1':'0')}catch(e){}};
-const wPathName=p=>{const [k,...r]=p.split('/');const a=decodeURIComponent(r.join('/'));return{item:a,building:a,sink:'AWESOME Sink points',power:'Power & fuels',belts:'Belts & pipes',calc:'Calculators',tiers:'HUB tiers & milestones',mam:'MAM research',alts:'Alternate recipes'}[k]||a};
+const wPathName=p=>{const [k,...r]=p.split('/');const a=decodeURIComponent(r.join('/'));return{item:a,building:a,sink:'AWESOME Sink points',power:'Power & fuels',belts:'Belts & pipes',calc:'Calculators',tiers:'HUB tiers & milestones',elevator:'Space Elevator',mam:'MAM research',alts:'Alternate recipes'}[k]||a};
 const wPathIco=p=>{const [k,...r]=p.split('/');const a=decodeURIComponent(r.join('/'));return k==='item'?wIco(ITEM_CLS[a]):k==='building'?wIco(WIKI.bcls[a]):''};
 const wStar=p=>`<button type="button" class="btn wstar" data-wfav="${escA(p)}" aria-pressed="${W_FAV.includes(p)}" title="${W_FAV.includes(p)?'Remove from':'Add to'} favourites">${W_FAV.includes(p)?'★':'☆'}</button>`;
 const wItemOK=i=>W_RAW.has(i)||!(W_RECIPES_OUT[i]||[]).length||(W_RECIPES_OUT[i]||[]).some(r=>r.out[0][0]===i&&recipeOK(r))||(W_RECIPES_OUT[i]||[]).some(recipeOK);
