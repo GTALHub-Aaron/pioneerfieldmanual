@@ -623,7 +623,12 @@ a.wun:hover .wun-n{color:var(--accent);text-decoration:underline;text-underline-
 .wsch .wmut{margin-right:2px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;min-width:92px}
 .wtiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
 .wtiles a{display:flex;flex-direction:row;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:var(--panel-2);color:inherit;text-decoration:none}
-.wtiles a:hover{border-color:var(--accent)}.wtiles b{font-family:var(--f-display);font-size:18px;font-weight:600}.wtiles span{font-size:12.5px;color:var(--muted)} .wtiles a>div{display:flex;flex-direction:column;gap:3px;min-width:0} .wti{width:40px;height:40px;flex:none;object-fit:contain} .wtiles a:hover .wti{transform:scale(1.06)}
+.wtiles a:hover{border-color:var(--accent)}.wtiles b{font-family:var(--f-display);font-size:18px;font-weight:600}.wtiles span{font-size:12.5px;color:var(--muted)} .lfind{margin:10px 0 4px}.lfind input{width:100%;box-sizing:border-box;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:6px 8px;font-size:13px;color:var(--fg)}
+ .lf-sug,.lf-list{display:flex;flex-direction:column;gap:2px;margin-top:6px;max-height:300px;overflow:auto}
+ .lf-sug button,.lf-list button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:4px;padding:4px 6px;color:inherit;font:inherit;font-size:12.5px;cursor:pointer}
+ .lf-sug button:hover,.lf-list button:hover{border-color:var(--accent);background:var(--panel-2)}
+ .lf-sug img,.lf-head img{width:22px;height:22px;object-fit:contain}.lf-sug span,.lf-list span{flex:1;min-width:0}.lf-list small{display:block;color:var(--muted);font-size:11px}.lf-sug b,.lf-list b{font-variant-numeric:tabular-nums}
+ .lf-head{display:flex;align-items:center;gap:8px;margin-top:8px}.lf-head div{flex:1}.lf-head small{display:block;color:var(--muted);font-size:11.5px} .wtiles a>div{display:flex;flex-direction:column;gap:3px;min-width:0} .wti{width:40px;height:40px;flex:none;object-fit:contain} .wtiles a:hover .wti{transform:scale(1.06)}
 .wfil{margin:6px 0 12px}
 .wstar{font-size:18px;line-height:1;padding:5px 10px;color:var(--muted)}.wstar[aria-pressed="true"]{color:var(--accent);border-color:var(--accent)}
 .wnavbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
@@ -2654,6 +2659,33 @@ function liveCardShow(h,cx,cy,pinned){const t=$('#mapCard');t.innerHTML=liveCard
   const W=mv.clientWidth,H=mv.clientHeight,w=t.offsetWidth,hh=t.offsetHeight;
   let x=cx+18,y=cy-hh/2;if(x+w>W-8)x=cx-w-18;if(x<8)x=8;y=Math.max(8,Math.min(y,H-hh-8));t.style.left=x+'px';t.style.top=y+'px'}
 function liveCardHide(){$('#mapCard').hidden=true}
+/* ---- find an item: every building, container and pioneer holding it, from the last server sync ---- */
+var LFIND;LFIND=LFIND||{q:'',d:null,hits:[]};
+function liveInv(){if(LIVE._inv&&LIVE._inv.d===LIVE.d)return LIVE._inv.m;const m=new Map(),add=(d,n,t,w)=>{if(!d||!(n>0))return;(m.get(d)||m.set(d,[]).get(d)).push([t,n,w])};
+  LIVE.bl.forEach(b=>{const i=b.info||{};(i.i||[]).forEach(([d,n])=>add(d,n,b,/Generator/.test(b.cls)?'fuel':'stored'));(i.in||[]).forEach(([d,n])=>add(d,n,b,'input'));(i.out||[]).forEach(([d,n])=>add(d,n,b,'output'))});
+  (LIVE.pl||[]).forEach(p=>(p.i||[]).forEach(([d,n])=>add(d,n,p,'carried')));LIVE._inv={d:LIVE.d,m};return m}
+function liveFindSet(q){LFIND.q=q;LFIND.d=null;LFIND.hits=[];const inv=liveInv(),t=q.trim().toLowerCase();if(!t)return;
+  const all=[...inv.keys()].map(d=>[d,lItem(d)]),ex=all.find(([,n])=>n.toLowerCase()===t),st=all.filter(([,n])=>n.toLowerCase().startsWith(t)),inc=all.filter(([,n])=>n.toLowerCase().includes(t));
+  const pick=ex||(st.length===1?st[0]:inc.length===1?inc[0]:null);if(!pick)return;LFIND.d=pick[0];
+  const by=new Map();inv.get(pick[0]).forEach(([o,n,w])=>{const e=by.get(o)||by.set(o,{o,n:0,w:new Set()}).get(o);e.n+=n;e.w.add(w)});LFIND.hits=[...by.values()].sort((a,b)=>b.n-a.n)}
+function liveFindHTML(){if(!LFIND||!LIVE.d)return'';const inv=liveInv(),t=LFIND.q.trim().toLowerCase();if(!t)return`<p class="fnote">Type an item to see every machine, container and pioneer holding it.</p>`;
+  if(!LFIND.d){const sug=[...inv.entries()].map(([d,l])=>[d,lItem(d),l.reduce((s,x)=>s+x[1],0)]).filter(([,n])=>n.toLowerCase().includes(t)).sort((a,b)=>a[1].localeCompare(b[1])).slice(0,12);
+    return sug.length?`<div class="lf-sug">${sug.map(([d,n,c])=>`<button type="button" data-lfpick="${escA(n)}">${lIco(d,n)}<span>${esc(n)}</span><b>${lQty(d,c)}</b></button>`).join('')}</div>`:`<p class="fnote">Nothing in your factory matches “${esc(LFIND.q)}”.</p>`}
+  const d=LFIND.d,tot=LFIND.hits.reduce((s,h)=>s+h.n,0),nm=lItem(d);
+  return`<div class="lf-head">${lIco(d,nm)}<div><b>${esc(nm)}</b><small>${lQty(d,tot)} in ${LFIND.hits.length} place${LFIND.hits.length>1?'s':''}</small></div><button type="button" class="linkb" data-lfclear>Clear</button></div>`+
+    `<div class="lf-list">${LFIND.hits.slice(0,60).map((h,k)=>{const o=h.o,pl=!o.cls;return`<button type="button" data-lfgo="${k}"><span>${esc(pl?o.n:lBName(o.cls))}<small>${[...h.w].join(', ')}</small></span><b>${lQty(d,h.n)}</b></button>`}).join('')}</div>`+
+    (LFIND.hits.length>60?`<p class="fnote">Showing the 60 biggest of ${LFIND.hits.length}.</p>`:'')}
+function liveFindGo(k){const h=LFIND.hits[k];if(!h)return;const o=h.o;MV.z=Math.max(MV.z,MV.fz*120);MV.x=mv.clientWidth/2-o.mx*MV.z;MV.y=mv.clientHeight/2-o.my*MV.z;
+  if(o.cls){MAPF.live.on=true;MAPF.live.b=true;if(/ConveyorLift|ConveyorAttachment/.test(o.cls))MAPF.live.belt=true;LPIN={b:o}}else{MAPF.live.on=true;MAPF.live.pl=true;LPIN={pl:o}}
+  mapSideRender();mapDraw()}
+/* rings round everything holding the searched item, in screen space so they show at any zoom */
+function liveFindMarks(g,S2,on){if(!LFIND||!LFIND.d||!LIVE.d||!MAPF.live.on)return;const acc=cssv('--accent');
+  LFIND.hits.forEach(h=>{const p=S2(h.o);if(!on(p))return;g.beginPath();g.arc(p.x,p.y,11,0,7);g.lineWidth=5;g.strokeStyle='rgba(0,0,0,.55)';g.stroke();g.lineWidth=2.5;g.strokeStyle=acc;g.stroke()})}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='lfind'){liveFindSet(e.target.value);const r=$('#lfindRes');if(r)r.innerHTML=liveFindHTML();mapDraw()}});
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-lfgo],[data-lfpick],[data-lfclear]');if(!b)return;
+  if(b.dataset.lfgo!=null)liveFindGo(+b.dataset.lfgo);
+  else{const v=b.dataset.lfpick!=null?b.dataset.lfpick:'';liveFindSet(v);const i=$('#lfind');if(i)i.value=v;const r=$('#lfindRes');if(r)r.innerHTML=liveFindHTML();mapDraw()}});
+
 function liveUnpin(){LPIN=null;$('#mapCard').hidden=true;mapSideRender();mapDraw()}
 
 function mapDraw(){if(!mRAF)mRAF=requestAnimationFrame(mapPaint)}
@@ -2694,7 +2726,7 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
     if(cl[n.id]){g.lineWidth=3;g.strokeStyle=acc;g.beginPath();g.arc(c.x,c.y,rn+(n.k!=='node'?7.5:5),0,7);g.stroke()}
     if(tap.has(n.id))mCheck(g,c.x+rn*.78,c.y-rn*.78,pin?Math.max(5,rn*.42):Math.max(2,rn*.45),pin)});
   MAP.hits=hits;MAP.rn=rn;mapPopPlace();
-  liveSloopMarks(g,S2,on);livePlayers(g,S2,on);
+  liveSloopMarks(g,S2,on);livePlayers(g,S2,on);liveFindMarks(g,S2,on);
   const so=MAP.sel&&mapFind(MAP.sel);if(so){const hh=hits.find(h=>h.o===so),p=hh||S2(so),rr=hh?hh.r:r;g.lineWidth=2.5;g.strokeStyle=ink;g.setLineDash([5,4]);g.beginPath();g.arc(p.x,p.y,rr+8,0,7);g.stroke();g.setLineDash([])}
   $('#mzLbl').textContent=Math.round(MV.z/MV.fz*100)+'%'}
 function mapHit(cx,cy){let best=null,bd=Infinity;
@@ -2780,6 +2812,7 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
       chip('data-ml="wire"',L.wire,'Power lines',`<i class="fic" style="background:#ffe25c"></i>`)+`</div>`+
       `<div class="mlinks"><button type="button" class="linkb" data-mlall="1">All</button><button type="button" class="linkb" data-mlall="0">None</button></div>`+
       `<div class="mlegend">${LCAT.filter(c=>ct[c[0]]).map(c=>`<span><i style="background:${c[2]}"></i>${c[1]}</span>`).join('')}</div>`+
+      `<div class="lfind"><input id="lfind" type="search" placeholder="Find an item in machines &amp; storage" autocomplete="off" aria-label="Find an item in machines and storage" value="${escA(LFIND?LFIND.q:'')}"><div id="lfindRes">${liveFindHTML()}</div></div>`+
       `<p class="fnote">From the Indifferent Broccoli server. Hover a building for a quick look, click it for details.</p>`;
     h+=sec('live','Server factory',null,b)}
   if(!D)h+='<p class="empty">No map data loaded yet.</p>';
