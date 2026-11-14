@@ -180,6 +180,7 @@ kbd{font-family:var(--f-mono);font-size:10.5px;background:var(--panel-2);border:
 .nh .pw{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);padding-top:2px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .nh .x{display:inline-grid;place-items:center;width:28px;height:28px;flex:none;border:1px solid var(--card-line);border-radius:5px;background:var(--field);color:var(--muted);font-size:20px;line-height:1;padding:0}
 .nh .x:hover{color:var(--bad);border-color:var(--bad)}
+.node.supply .nh{background:var(--card-head) ;background-image:repeating-linear-gradient(45deg,transparent 0 8px,color-mix(in srgb,var(--ok) 16%,transparent) 8px 16px)}
 .node.goal .nh{background:var(--card-head) ;background-image:repeating-linear-gradient(-45deg,transparent 0 8px,color-mix(in srgb,var(--accent) 14%,transparent) 8px 16px)}
 .ctl{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:end;padding:7px 10px;border-bottom:1px solid var(--card-line)}
 .ctl label{display:flex;flex-direction:column;gap:2px;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
@@ -1116,7 +1117,7 @@ const nodeById=id=>S.nodes.find(n=>n.id==id);
 const KEY='ficsit-line-planner-v1';
 
 const amp=n=>n.kind==='recipe'&&n.sloops>0?1+n.sloops/SLOTS[RMAP[n.recipe].bld]:1;
-function plan(n){const scap=100+50*(n.shards||0);
+function plan(n){if(n.kind==='supply')return{m:0,clk:0,belt:false};const scap=100+50*(n.shards||0);
   if(n.kind==='extract'){const m=Math.ceil(n.count-1e-6);const o=ports(n).outs[0];const full=o.raw*m;const clk=m&&full>0?scap*Math.min(1,o.rate/full):0;
     return{m,clk,belt:m>0&&o.unit<o.raw-1e-6&&o.rate>=o.unit*m-1e-6}}
   /* each machine feeds and empties through one belt or pipe per port, so the fastest one you own limits its clock */
@@ -1131,6 +1132,7 @@ function ports(n){
   if(n.kind==='gen'){const G=GEN[n.gen];if(G.geo)return{ins:[],outs:[]};const u=G.mw*60/MJ[n.fuel],ins=[{item:n.fuel,unit:u,rate:u*n.count}];
     if(G.water)ins.push({item:'Water',unit:G.water,rate:G.water*n.count});
     const w=WASTE[n.fuel],outs=w?[{item:w[0],unit:u*w[1],rate:u*w[1]*n.count}]:[];return{ins,outs}}
+  if(n.kind==='supply'){const r=Math.max(0,+n.rate||0);return{ins:[],outs:[{item:n.item,unit:r,rate:r}]}}
   return{ins:[{item:n.item,unit:0,rate:Math.max(0,+n.rate||0)}],outs:[]};
 }
 function power(n){
@@ -1176,7 +1178,7 @@ function balance(only,skipExtract){
   const ok=n=>!only||(only instanceof Set?only.has(n.id):n.id===only);
   for(let pass=0;pass<80;pass++){
     const P=compute();let changed=false;
-    S.nodes.forEach(n=>{if(n.kind==='goal'||!ok(n)||(skipExtract&&n.kind==='extract'))return;const c=requiredCount(n,P);
+    S.nodes.forEach(n=>{if(n.kind==='goal'||n.kind==='supply'||!ok(n)||(skipExtract&&n.kind==='extract'))return;const c=requiredCount(n,P);
       if(c!==null&&Math.abs(c-n.count)>1e-4){n.count=c;changed=true}});
     if(!changed||(only&&!(only instanceof Set)))break;
   }
@@ -1204,7 +1206,7 @@ function maxFromSupply(){
   const goalComp=new Set(goals.map(g=>find(g.id)));
   let any=false;
   /* lines that end in targets: exact amounts first (by priority), then split the rest by share */
-  const ex=S.nodes.filter(n=>n.kind==='extract'&&n.ex!=='water'&&goalComp.has(find(n.id))&&S.edges.some(e=>e.from.n===n.id));
+  const ex=S.nodes.filter(n=>(n.kind==='supply'||(n.kind==='extract'&&n.ex!=='water'))&&goalComp.has(find(n.id))&&S.edges.some(e=>e.from.n===n.id));
   if(goals.length&&ex.length){
     const P0=compute();const cap=ex.map(x=>P0[x.id].outs[0].rate);const wants=goals.map(g=>g.want??g.rate);
     const draw=rates=>{goals.forEach((g,i)=>g.rate=rates[i]);balance(null,true);compute();
@@ -1229,16 +1231,45 @@ function maxFromSupply(){
   /* lines with no targets: scale them until the scarcest extractor is fully used */
   balance(null,true);
   const P=compute();const k={};
-  S.nodes.forEach(n=>{if(n.kind!=='extract'||n.ex==='water'||goalComp.has(find(n.id)))return;
+  S.nodes.forEach(n=>{if((n.kind!=='extract'&&n.kind!=='supply')||n.ex==='water'||goalComp.has(find(n.id)))return;
     const es=S.edges.filter(e=>e.from.n===n.id);if(!es.length)return;
     const D=es.reduce((a,e)=>a+e._d,0);if(D<=1e-9)return;
     const r=P[n.id].outs[0].rate/D,c=find(n.id);k[c]=Math.min(k[c]??Infinity,r)});
-  S.nodes.forEach(n=>{const f=k[find(n.id)];if(!isFinite(f)||n.kind==='extract')return;any=true;
+  S.nodes.forEach(n=>{const f=k[find(n.id)];if(!isFinite(f)||n.kind==='extract'||n.kind==='supply')return;any=true;
     n.count=Math.round(n.count*f*1000)/1000});
   balance(null,true);
   const wat=new Set(S.nodes.filter(n=>n.kind==='extract'&&n.ex==='water').map(n=>n.id));if(wat.size)balance(wat);
   return any;
 }
+/* "Already making" cards: an item you produce somewhere else, at a rate you type. With "Use all of it", every target it
+   feeds is scaled so the card's whole output gets used (the smallest share wins when several cards feed one target), and
+   the rest of the line resizes to match. Only re-runs when the plan's shape changes, so a target you edit by hand stays put. */
+let SUPSIG='';
+function supplyFit(force){
+  const sup=S.nodes.filter(n=>n.kind==='supply'&&n.full!=='cap'&&(+n.rate||0)>0&&S.edges.some(e=>e.from.n===n.id));
+  const sig=JSON.stringify([S.nodes.map(n=>[n.id,n.kind,n.recipe,n.sloops,n.mode,n.item,n.fuel,n.res,n.full,n.kind==='supply'?n.rate:0]),S.edges.map(e=>[e.from,e.to])]);
+  if(!force&&sig===SUPSIG)return false;SUPSIG=sig;if(!sup.length)return false;
+  const down={};sup.forEach(s=>down[s.id]=reach(s.id,'down'));
+  const T=S.nodes.filter(n=>isTarget(n)&&n.mode!=='off'&&sup.some(s=>down[s.id].has(n.id)));if(!T.length)return false;
+  const comp=new Set();sup.forEach(s=>down[s.id].forEach(id=>reach(id,'up').forEach(u=>comp.add(u))));
+  T.forEach(t=>{if(!((+t.rate||0)>0))t.rate=1;delete t.want});
+  for(let k=0;k<4;k++){balance(comp,true);compute();
+    const f={};sup.forEach(s=>{const d=S.edges.filter(e=>e.from.n===s.id).reduce((a,e)=>a+(e._d||0),0);if(d>1e-9)f[s.id]=(+s.rate)/d});
+    let done=true;T.forEach(t=>{let m=Infinity;sup.forEach(s=>{if(down[s.id].has(t.id)&&f[s.id]!=null)m=Math.min(m,f[s.id])});
+      if(isFinite(m)&&Math.abs(m-1)>1e-4){done=false;t.rate=Math.round((+t.rate||0)*m*1000)/1000;if(t.kind==='recipe'||t.kind==='gen')t.count=Math.round(t.rate/unit0(t)*1000)/1000}});
+    if(done)break}
+  balance(comp);S.nodes.forEach(n=>{if(comp.has(n.id))buildNode(n)});return true}
+/* swap an "Already making" card for the real thing: the machine (or extractor) that makes it, built back to raw resources */
+function supplyBuild(n){const it=n.item;let spec,opt={};
+  if(ORES.includes(it)){spec='extract:miner';opt.res=it}else if(it==='Water')spec='extract:water';else if(it==='Crude Oil')spec='extract:oil';
+  else if(EX.well.res.includes(it)){spec='extract:well';opt.res=it}
+  else{const r=[chooseRecipe(it,null,new Set([it])),...recipesFor(it)].find(r=>r&&recipeOK(r)&&r.out[0][0]===it&&r.bld!=='Packager');if(!r)return{err:'No unlocked recipe makes '+it+' yet. Tick it in Game progress first.'};spec='recipe:'+r.id}
+  const c=addNode(spec,n.x,n.y,opt),oi=ports(c).outs.findIndex(o=>o.item===it);
+  S.edges.forEach(e=>{if(e.from.n===n.id)e.from={n:c.id,i:oi}});
+  if(c.kind==='extract'){c.limit=+n.rate||0;exFit(c)}
+  else{const u=ports({...c,count:1}).outs[oi].unit;c.count=u>0?Math.round((+n.rate||0)/u*1000)/1000:1;if(isLeaf(c)){c.mode='exact';c.rate=+n.rate||0}}
+  removeNode(n.id);buildNode(c);let r=null;if(c.kind==='recipe'){r=buildChain(c,false)}balance(new Set([...reach(c.id,'up')].filter(id=>id!==c.id)));
+  return{c,r}}
 /* Wire up everything a node needs, back to raw resources */
 const reach=(id,dir)=>{const seen=new Set([id]),st=[id];while(st.length){const c=st.pop();
   S.edges.forEach(e=>{const [a,b]=dir==='down'?[e.from.n,e.to.n]:[e.to.n,e.from.n];if(a===c&&!seen.has(b)){seen.add(b);st.push(b)}})}return seen};
@@ -1445,6 +1476,7 @@ function addNode(spec,x,y,opt={}){
   if(kind==='extract'){n.ex=key;n.res=opt.res||EX[key].res[0];applyDefs(n)}
   if(kind==='gen'){const G=GEN[key];n.gen=key;n.fuel=opt.fuel&&G.fuels.includes(opt.fuel)?opt.fuel:G.fuels[0];n.purity='Normal';n.mode='exact';n.prio=1;n.share=100;n.rate=genMW(n);n.shards=G.geo?0:Math.min(+$('#dMShards').value,UNL.shards)}
   if(kind==='goal'){n.item=opt.item||'Reinforced Iron Plate';n.rate=opt.rate||10;n.mode='exact';n.prio=1;n.share=50}
+  if(kind==='supply'){n.item=opt.item||'Turbofuel';n.rate=opt.rate||60;n.full='all'}
   S.nodes.push(n);buildNode(n);return n;
 }
 function addEdge(from,to){
@@ -1477,7 +1509,7 @@ const opts=(list,cur)=>list.map(v=>`<option${v===cur?' selected':''}>${v}</optio
 function buildNode(n){
   let el=document.getElementById('n'+n.id);const fresh=!el;
   if(fresh){el=document.createElement('div');el.id='n'+n.id;world.appendChild(el)}
-  el.dataset.leaf=String(isLeaf(n));el.className='node'+(n.kind==='goal'?' goal':'')+(isLeaf(n)&&n.mode!=='off'?' leaf':'')+(SELN.has(n.id)?' sel':'');
+  el.dataset.leaf=String(isLeaf(n));el.className='node'+(n.kind==='goal'?' goal':n.kind==='supply'?' supply':'')+(isLeaf(n)&&n.mode!=='off'?' leaf':'')+(SELN.has(n.id)?' sel':'');
   el.dataset.id=n.id;el.style.left=n.x+'px';el.style.top=n.y+'px';
   const p=ports(n);let b,t,ctl;
   const num=(k,lab,v,extra='')=>`<label>${lab}<input id="f${n.id}-${k}" data-k="${k}" type="number" inputmode="decimal" step="any" min="0" ${extra} value="${v}"></label>`;
@@ -1501,6 +1533,10 @@ function buildNode(n){
       (md==='exact'?num('rate','MW',+fmt(n.rate||0))+num('prio','Priority',n.prio||1,'step="1" min="1" title="1 is filled first"'):md==='share'?num('share','Share %',n.share??100):'')+`</div>`+
       num('count','Generators',n.count,G.geo?'step="1"':'')+(G.geo?'':pips(n,'shards',Math.max(UNL.shards,n.shards||0),'Power shards','shard'))+
       `<button class="fit" data-act="fit" title="Size to match the MW wanted">Fit</button>`+onMapBtn(n)+(G.fuels.length?`<button class="fit ch" data-act="chain" title="Add and wire everything this needs, back to raw resources">Build chain</button>`+cmBtn():'')}
+  else if(n.kind==='supply'){b='Already making';t=n.item;
+    ctl=`<label>Item<select id="f${n.id}-item" data-k="item">${opts(ALL_ITEMS,n.item)}</select></label>`+num('rate','Per min',n.rate)+
+      `<label>Downstream<select id="f${n.id}-full" data-k="full" title="Use all of it: every target this feeds is sized so the whole amount gets used. Only what’s needed: targets keep their own rates and this card just supplies them."><option value="all"${n.full!=='cap'?' selected':''}>Use all of it</option><option value="cap"${n.full==='cap'?' selected':''}>Only what’s needed</option></select></label>`+
+      `<button class="fit ch" data-act="supbuild" title="Swap this card for the machines that make it, wired back to raw resources">Build its line</button>`}
   else{b='Target output';t=n.item;
     const md=n.mode==='share'?'share':'exact';
     ctl=`<label>Item<select id="f${n.id}-item" data-k="item">${opts(ALL_ITEMS,n.item)}</select></label>`+
@@ -1508,7 +1544,7 @@ function buildNode(n){
       (md==='exact'?num('rate','Per min',n.rate)+num('prio','Priority',n.prio||1,'step="1" min="1" title="1 is filled first"'):num('share','Share %',n.share??50))+`<button class="fit ch" data-act="chain" title="Add and wire every machine this needs, back to raw resources">Build chain</button>`+cmBtn()}
   const row=(side,x,i)=>`<div class="port ${side}" data-side="${side}" data-i="${i}"><span class="dot" data-cat="${cat(x.item)}" title="${x.item}"></span><span class="io">${side==='in'?'IN':'OUT'}</span>${itemImg(x.item,'pi')}<span class="nm">${x.item}</span><span class="v"></span></div>`;
   el.innerHTML=`${headHtml(n,b,t)}
-    <div class="ctl">${ctl}</div><div class="ports">${p.ins.map((x,i)=>row('in',x,i)).join('')}${p.outs.map((x,i)=>row('out',x,i)).join('')}</div><div class="hint"></div>${n.kind==='goal'?'':`<details class="blay"${OPENB.has(n.id)?' open':''}><summary>Belt layout</summary><div class="blb"></div></details>`}`;
+    <div class="ctl">${ctl}</div><div class="ports">${p.ins.map((x,i)=>row('in',x,i)).join('')}${p.outs.map((x,i)=>row('out',x,i)).join('')}</div><div class="hint"></div>${n.kind==='goal'||n.kind==='supply'?'':`<details class="blay"${OPENB.has(n.id)?' open':''}><summary>Belt layout</summary><div class="blb"></div></details>`}`;
 }
 /* ---------- Splitter / merger hints ---------- */
 const OPENB=new Set();
@@ -1539,7 +1575,7 @@ function beltLayout(n,p){
     out.push(a+'</div>')});
   return out.join('')||'<p class="bl-none">No belts in or out.</p>'}
 function buildPlan(n,used,rate){
-  if(n.kind==='goal')return '';
+  if(n.kind==='goal'||n.kind==='supply')return '';
   const {m,clk}=plan(n);if(!m)return n.kind==='extract'?'Set a count to start extracting':'Idle — nothing connected downstream';
   if(n.kind==='extract'){const sh=clk>200+1e-6?3:clk>150+1e-6?2:clk>100+1e-6?1:0;const pb=plan(n).belt;let t=`${m} × ${fmt(clk)}%`+(pb?` (${carrier(n.res,maxCarry(n.res))} limit)`:n.limit>0&&clk<100+50*(n.shards||0)-1e-6?' (capped)':'')+(sh?` · ${sh} shard${sh>1?'s':''} each`:'');
     if(used!=null&&used>1e-6&&used<rate-.005){t+=` · enough at ${fmt(clk*used/rate)}%`}return t}
@@ -1731,7 +1767,7 @@ function drawWiresNow(){
   wires.innerHTML=svg;labels.innerHTML=lab;paintChain();queueMini();
 }
 function refresh(save=true){
-  validateEdges();
+  validateEdges();supplyFit();
   const P=compute();LAST=P;
   S.nodes.forEach(n=>{
     let el=document.getElementById('n'+n.id);if(!el)return;if(n.kind==='recipe'&&el.dataset.leaf!==String(isLeaf(n))){buildNode(n);el=document.getElementById('n'+n.id)}const p=P[n.id];let worst='ok';
@@ -1743,14 +1779,15 @@ function refresh(save=true){
       else{v.textContent=wired?fmt(x.used)+' / '+fmt(x.rate):fmt(x.rate)+'/min';v.title=wired?'used downstream / produced per min':'produced per min, nothing connected';pe.dataset.st=x.used<x.rate-.005?'spare':'ok'}
     });
     el.dataset.st=worst;
-    {const pw=el.querySelector('.pw');if(n.kind==='gen'){const fed=p.ins.length?Math.min(1,...p.ins.map(x=>x.rate>1e-9?x.sup/x.rate:1)):1;pw.textContent='+'+fmt(genMW(n)*n.count*fed)+' MW';pw.style.color='var(--ok)'}else{pw.textContent=n.kind==='goal'?'':fmt(power(n))+' MW';pw.style.color=''}}
+    {const pw=el.querySelector('.pw');if(n.kind==='gen'){const fed=p.ins.length?Math.min(1,...p.ins.map(x=>x.rate>1e-9?x.sup/x.rate:1)):1;pw.textContent='+'+fmt(genMW(n)*n.count*fed)+' MW';pw.style.color='var(--ok)'}else{pw.textContent=n.kind==='goal'||n.kind==='supply'?'':fmt(power(n))+' MW';pw.style.color=''}}
     {const bb=el.querySelector('.blb');if(bb&&el.querySelector('.blay').open)bb.innerHTML=beltLayout(n,p)}
     const h=el.querySelector('.hint');
     const allT=S.nodes.filter(isTarget),shareTot=allT.filter(g=>g.mode==='share'||(g.kind==='recipe'&&g.mode!=='exact')).reduce((a,g)=>a+(g.share??(g.kind==='recipe'?100:50)),0);
     const tText=(isShare,share,got,rate,sup)=>{const gap=rate-sup;
       if(isShare)return `Gets ${fmt(rate)}/min · ${shareTot?fmt(100*share/shareTot):0}% of leftover`+(isShort(gap,rate)?` · short ${fmt(gap)}`:'');
       return (n.want?`Supply allows ${fmt(rate)} of ${fmt(n.want)} wanted`:isShort(gap,rate)?`Short ${fmt(gap)}/min`:'Target met')+(allT.filter(g=>g.mode==='exact').length>1?` · priority ${n.prio||1}`:'')};
-    if(n.kind==='goal'){const x=p.ins[0];h.textContent=tText(n.mode==='share',n.share??50,x.sup,x.rate,x.sup)}
+    if(n.kind==='supply'){const o=p.outs[0];h.textContent=!S.edges.some(e=>e.from.n===n.id)?'Drag from OUT to add what you make with it':o.used>=o.rate-.005?`All ${fmt(o.rate)}/min used`:`Uses ${fmt(o.used)} of ${fmt(o.rate)}/min · ${fmt(o.rate-o.used)} spare`}
+    else if(n.kind==='goal'){const x=p.ins[0];h.textContent=tText(n.mode==='share',n.share??50,x.sup,x.rate,x.sup)}
     else if(n.kind==='recipe'&&isTarget(n)){const o=p.outs[0];const plan=buildPlan(n,null,0);
       h.textContent=plan+' · '+tText(n.mode!=='exact',n.share??100,o.rate,+n.rate||0,o.rate)}
     else if(n.kind==='gen'){const fed=p.ins.length?Math.min(1,...p.ins.map(x=>x.rate>1e-9?x.sup/x.rate:1)):1,made=genMW(n)*n.count*fed,{m,clk}=plan(n);
@@ -1766,10 +1803,11 @@ function refresh(save=true){
   if(save)persist();
 }
 function summary(P){
-  let pow=0,made=0,bld=0,sloops=0;const gens={};const by={},raw={},short={},spare={},goals=[];
+  let pow=0,made=0,bld=0,sloops=0;const gens={};const by={},raw={},short={},spare={},goals=[],supd={};
   S.nodes.forEach(n=>{
     const p=P[n.id];const w=power(n);pow+=w;
-    if(n.kind!=='goal'){const m=plan(n).m;bld+=m;if(n.kind==='recipe'&&n.sloops>0)sloops+=m*n.sloops;
+    if(n.kind==='supply')supd[n.item]=(supd[n.item]||0)+p.outs[0].rate;
+    if(n.kind!=='goal'&&n.kind!=='supply'){const m=plan(n).m;bld+=m;if(n.kind==='recipe'&&n.sloops>0)sloops+=m*n.sloops;
       const k=n.kind==='recipe'?RMAP[n.recipe].bld:n.kind==='gen'?GEN[n.gen].name:EX[n.ex].name+(n.ex==='miner'?' '+n.tier:'');
       by[k]=by[k]||{n:0,p:0};by[k].n+=m;if(n.kind==='gen'){by[k].gen=true;const fed=p.ins.length?Math.min(1,...p.ins.map(x=>x.rate>1e-9?x.sup/x.rate:1)):1;by[k].p+=genMW(n)*n.count*fed}else by[k].p+=w}
     if(n.kind==='extract')raw[n.res]=(raw[n.res]||0)+p.outs[0].rate;
@@ -1785,6 +1823,7 @@ function summary(P){
   const rows=(o,cls,unit='/min')=>{const k=Object.keys(o).sort();return k.length?k.map(i=>`<div class="row ${cls}"><span class="ri">${itemImg(i,'ti')}${i}</span><span class="n">${fmt(o[i])}${FLUIDS.has(i)?' m³':''}${unit}</span></div>`).join(''):null};
   let h='<h2>Targets</h2>'+(goals.length?goals.map(([i,s,r])=>{const ok=!isShort(r-s,r);return `<div class="row ${ok?'ok':'warn'}"><span>${i}<span class="chip ${ok?'ok':'no'}">${ok?'Met':'Short'}</span></span><span class="n">${fmt(s)} / ${fmt(r)}</span></div>`}).join(''):'<div class="empty">Add a Target output node to plan toward a rate.</div>');
   h+='<h2>Raw extraction</h2>'+(rows(raw,'')||'<div class="empty">No extractors placed.</div>');
+  if(Object.keys(supd).length)h+='<h2>Already making</h2>'+rows(supd,'');
   h+='<h2>Unsupplied inputs</h2>'+(rows(short,'bad')||'<div class="empty">Every input is fully fed.</div>');
   h+='<h2>Excess output</h2>'+(rows(spare,'')||'<div class="empty">Nothing left over.</div>');
   const bk=Object.keys(by).sort();
@@ -1838,14 +1877,15 @@ function specItem(spec){const [k,id]=spec.split(':');
   if(k==='recipe'){const r=RMAP[id];return r&&recipeOK(r)?palItem(spec,r.name,r.bld+' · '+recipeLine(r),r.alt):''}
   if(k==='gen'){const G=GEN[id];return G&&UNL.gens[id]?palItem(spec,G.name,G.mw+' MW'):''}
   if(k==='extract'){const e=EX[id];return e&&exOK(id)?palItem(spec,e.name,e.res.slice(0,4).join(', ')):''}
-  if(k==='goal')return palItem(spec,'Target output','The rate you want to end up with');return ''}
+  if(k==='goal')return palItem(spec,'Target output','The rate you want to end up with');
+  if(k==='supply')return palItem(spec,'Already making','An item you already produce, at a rate you type');return ''}
 function renderPalette(){
   const q=$('#q').value.trim().toLowerCase(),searching=!!q;
   const hit=s=>!q||s.toLowerCase().includes(q);
   const groups=[];
   if(!searching){const items=RECENT.map(specItem).filter(Boolean);if(items.length)groups.push(['Recently used','',items])}
-  const ex=[['extract:miner','Miner','Ores · 60 / 120 / 240 per min by tier'],['extract:water','Water Extractor','120 m³ Water'],['extract:oil','Oil Extractor','120 m³ Crude Oil on a normal node'],['extract:well','Resource Well','Nitrogen Gas, Water or Oil · 60 m³ per normal satellite · includes 150 MW pressurizer'],['goal','Target output','The rate you want to end up with']]
-    .filter(([s,n,d])=>(s==='goal'||exOK(s.split(':')[1]))&&hit(n+' '+d+(s==='extract:miner'?' '+ORES.join(' '):'')));
+  const ex=[['extract:miner','Miner','Ores · 60 / 120 / 240 per min by tier'],['extract:water','Water Extractor','120 m³ Water'],['extract:oil','Oil Extractor','120 m³ Crude Oil on a normal node'],['extract:well','Resource Well','Nitrogen Gas, Water or Oil · 60 m³ per normal satellite · includes 150 MW pressurizer'],['goal','Target output','The rate you want to end up with'],['supply','Already making','An item you already produce, at a rate you type. Drag from it to plan what you make with it']]
+    .filter(([s,n,d])=>(s==='goal'||s==='supply'||exOK(s.split(':')[1]))&&hit(n+' '+d+(s==='extract:miner'?' '+ORES.join(' '):'')));
   if(ex.length)groups.push(['Extraction & targets','',ex.map(([s,n,d])=>palItem(s,n,d))]);
   const gl=Object.entries(GEN).filter(([k,G])=>UNL.gens[k]&&hit(G.name+' power generator '+G.fuels.join(' ')));
   if(gl.length)groups.push(['Power generators','',gl.map(([k,G])=>palItem('gen:'+k,G.name,`${G.mw} MW${G.geo?' on a normal node':' · '+G.fuels.slice(0,3).join(', ')+(G.fuels.length>3?'…':'')}${G.water?' · '+G.water+' m³ water':''}`))]);
@@ -2005,6 +2045,7 @@ function openMenu(d,cx,cy){
     if(item==='Crude Oil'&&UNL.oil)list.push({spec:'extract:oil',label:'Oil Extractor',sub:'Pump crude oil'});
     if(EX.well.res.includes(item)&&UNL.well)list.push({spec:'extract:well',label:'Resource Well',sub:'Satellites on a well',opt:{res:item}});
     RECIPES.filter(r=>recipeOK(r)&&r.out.some(x=>x[0]===item)).forEach(r=>list.push({spec:'recipe:'+r.id,label:r.name+(r.alt?' (alt)':''),sub:r.bld+' · makes '+fmt(r.out.find(x=>x[0]===item)[1])+'/min'}));
+    list.push({spec:'supply',label:'Already making it',sub:'Use '+item+' you produce somewhere else',opt:{item,rate:+fmt(ports(nodeById(d.id)).ins[d.i].rate)||60}});
   }
   const m=$('#qmenu');
   if(!list.length){closeMenu();return}
@@ -2024,8 +2065,8 @@ $('#qmenu').addEventListener('click',e=>{
   const p=ports(n);
   if(d.side==='out'){const i=p.ins.findIndex(x=>x.item===d.item);if(i>=0)addEdge({n:d.id,i:d.i},{n:n.id,i})}
   else{const i=p.outs.findIndex(x=>x.item===d.item);if(i>=0)addEdge({n:n.id,i},{n:d.id,i:d.i})}
-  if(n.kind==='goal')placeFree(new Set([n.id]));
-  if(n.kind!=='goal'){balance(n.id);const r=buildChain(n,true);if(!r)placeFree(new Set([n.id]));const t=chainNote(r);if(t)setTimeout(()=>flash(t),0);
+  if(n.kind==='goal'||n.kind==='supply'){n.full=n.kind==='supply'?'cap':n.full;placeFree(new Set([n.id]))}
+  if(n.kind!=='goal'&&n.kind!=='supply'){balance(n.id);const r=buildChain(n,true);if(!r)placeFree(new Set([n.id]));const t=chainNote(r);if(t)setTimeout(()=>flash(t),0);
     S.nodes.forEach(m=>{const f=document.getElementById(`f${m.id}-count`);if(f)f.value=m.count})}
   closeMenu();refresh();
 });
@@ -2065,6 +2106,7 @@ world.addEventListener('click',e=>{
   if(a.dataset.act==='onmap'){const n=nodeById(id);location.hash='#/map';requestAnimationFrame(()=>requestAnimationFrame(()=>mapFocus(n.node,true)));return}
   if(a.dataset.act==='chainmenu'){e.stopPropagation();if(!$('#rcMenu').hidden&&RC_NODE===id)rcClose();else rcOpen(a,id);return}
   if(a.dataset.act==='chain'){const r=buildChain(nodeById(id));if(r){const t=chainNote(r);if(t)setTimeout(()=>flash(t),0);S.nodes.forEach(n=>{const f=document.getElementById(`f${n.id}-count`);if(f)f.value=n.count});refresh();requestAnimationFrame(fitView)}else flash('Everything this card needs is already wired')}
+  if(a.dataset.act==='supbuild'){const n=nodeById(id),it=n.item,r=supplyBuild(n);if(r.err){flash(r.err);return}if(r.r){const t=chainNote(r.r);if(t)setTimeout(()=>flash(t),0)}else flash('Swapped for what makes '+it);refresh();requestAnimationFrame(fitView);return}
   if(a.dataset.act==='layout'){layOpen(id);return}
   if(a.dataset.act==='layline'){layOpenLine(id);return}
   if(a.dataset.act==='baseon'){const n=nodeById(id),r=baseOnSupply(n);if(r.err){flash(r.err);return}S.nodes.forEach(buildNode);refresh();
@@ -3473,8 +3515,8 @@ const layName=n=>n._lo?'Left over · '+n.item:n.kind==='recipe'?RMAP[n.recipe].n
 const layShort=n=>n._lo?n.item:n.kind==='goal'?'Target':n.kind==='gen'?GEN[n.gen].name:n.kind==='extract'?n.res:RMAP[n.recipe].out[0][0];
 const layIcon=n=>wIco(ITEM_CLS[n.kind==='recipe'?RMAP[n.recipe].out[0][0]:n.kind==='extract'?n.res:n.kind==='goal'?n.item:n.fuel]);
 /* ---- whole line ---- */
-function layComp(id){const seen=new Set([id]),st=[id];while(st.length){const c=st.pop();S.edges.forEach(e=>{[[e.from.n,e.to.n],[e.to.n,e.from.n]].forEach(([a,b])=>{if(a===c&&!seen.has(b)){seen.add(b);st.push(b)}})})}
-  return S.nodes.filter(n=>seen.has(n.id))}
+function layComp(id){const seen=new Set([id]),st=[id],sp=x=>(nodeById(x)||{}).kind==='supply';while(st.length){const c=st.pop();S.edges.forEach(e=>{[[e.from.n,e.to.n],[e.to.n,e.from.n]].forEach(([a,b])=>{if(a===c&&!seen.has(b)&&!sp(b)){seen.add(b);st.push(b)}})})}
+  return S.nodes.filter(n=>seen.has(n.id)&&n.kind!=='supply')}
 /* first arrangement follows the planner: its columns become rows of blocks left to right, stacked top to bottom */
 /* block positions live on each card (n.lb) so they're saved with the plan */
 function layArrange(nodes,force){const todo=nodes.filter(n=>force||!n.lb);if(!todo.length)return;
@@ -4142,7 +4184,7 @@ function clean(d){
     (n.kind==='recipe'&&RMAP[n.recipe])||
     (n.kind==='extract'&&EX[n.ex]&&EX[n.ex].res.includes(n.res)&&EX[n.ex].tiers[n.tier]&&(!EX[n.ex].purity||PUR[n.purity]))||
     (n.kind==='gen'&&GEN[n.gen]&&(GEN[n.gen].geo||GEN[n.gen].fuels.includes(n.fuel)))||
-    (n.kind==='goal'&&ALL_ITEMS.includes(n.item)))).map(n=>({...n,id:+n.id,x:+n.x||0,y:+n.y||0,count:Math.max(0,(+n.count||0)*(n.clock?Math.min(250,Math.max(1,+n.clock))/100:1)),clock:undefined,shards:[0,1,2,3].includes(+n.shards)?+n.shards:0,rate:n.kind==='recipe'&&!(+n.rate>0)?Math.max(0,(+n.count||0)*RMAP[n.recipe].out[0][1]):(+n.rate||0),mode:n.kind==='recipe'||n.kind==='gen'?(['share','exact','off'].includes(n.mode)?n.mode:(n.kind==='gen'?'exact':'share')):(n.mode==='share'?'share':'exact'),prio:Math.max(1,Math.round(+n.prio||1)),share:Math.max(0,n.share==null?(n.kind==='recipe'?100:50):+n.share||0),want:n.want>0?+n.want:undefined,limit:Math.max(0,+n.limit||0),sloops:n.kind==='recipe'?Math.max(0,Math.min(SLOTS[RMAP[n.recipe].bld],Math.round(+n.sloops||0))):0}));
+    ((n.kind==='goal'||n.kind==='supply')&&ALL_ITEMS.includes(n.item)))).map(n=>({...n,id:+n.id,x:+n.x||0,y:+n.y||0,count:Math.max(0,(+n.count||0)*(n.clock?Math.min(250,Math.max(1,+n.clock))/100:1)),clock:undefined,shards:[0,1,2,3].includes(+n.shards)?+n.shards:0,rate:n.kind==='recipe'&&!(+n.rate>0)?Math.max(0,(+n.count||0)*RMAP[n.recipe].out[0][1]):(+n.rate||0),mode:n.kind==='recipe'||n.kind==='gen'?(['share','exact','off'].includes(n.mode)?n.mode:(n.kind==='gen'?'exact':'share')):(n.mode==='share'?'share':'exact'),prio:Math.max(1,Math.round(+n.prio||1)),share:Math.max(0,n.share==null?(n.kind==='recipe'?100:50):+n.share||0),want:n.want>0?+n.want:undefined,limit:Math.max(0,+n.limit||0),sloops:n.kind==='recipe'?Math.max(0,Math.min(SLOTS[RMAP[n.recipe].bld],Math.round(+n.sloops||0))):0}));
   nodes.forEach(n=>{if(n.kind==='extract')n.count=Math.ceil(n.count-1e-6)});
   const edges=(d.edges||[]).filter(e=>e&&e.from&&e.to).map(e=>({id:+e.id,from:{n:+e.from.n,i:+e.from.i},to:{n:+e.to.n,i:+e.to.i}}));
   const seq=Math.max(0,...nodes.map(n=>n.id),...edges.map(e=>e.id))+1;
