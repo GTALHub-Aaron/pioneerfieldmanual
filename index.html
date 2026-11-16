@@ -850,7 +850,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     <label class="chk"><input type="checkbox" id="uOil"> Oil Extractor</label>
     <h3>Production amplifier</h3>
     <label class="chk"><input type="checkbox" id="uSloop"> Somersloops researched <small>· Alien Technology in the MAM</small></label>
-    <div class="sgrid"><label class="f">Somersloops you have<input type="number" id="uSloopHave" min="0" step="1" placeholder="Optional" style="background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:5px 6px;font-size:13px;color:var(--fg)"></label></div>
+    <div class="sgrid"><label class="f">Somersloops you have<input type="text" data-calc autocomplete="off" id="uSloopHave" placeholder="Optional" style="background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:5px 6px;font-size:13px;color:var(--fg)"></label></div>
     <p>Smelters and Constructors take 1; Assemblers, Foundries, Refineries and Converters 2; Manufacturers, Blenders, Particle Accelerators and Quantum Encoders 4. Packagers take none. Filling every slot doubles output from the same inputs and uses 4× power; it stacks with overclocking. Miners and extractors can’t take them.</p>
     <label class="chk"><input type="checkbox" id="uWell"> Resource Well Pressurizer <small>· Nitrogen Gas, plus water and oil wells</small></label>
     <h3>Power generators</h3>
@@ -1512,7 +1512,7 @@ function buildNode(n){
   el.dataset.leaf=String(isLeaf(n));el.className='node'+(n.kind==='goal'?' goal':n.kind==='supply'?' supply':'')+(isLeaf(n)&&n.mode!=='off'?' leaf':'')+(SELN.has(n.id)?' sel':'');
   el.dataset.id=n.id;el.style.left=n.x+'px';el.style.top=n.y+'px';
   const p=ports(n);let b,t,ctl;
-  const num=(k,lab,v,extra='')=>`<label>${lab}<input id="f${n.id}-${k}" data-k="${k}" type="number" inputmode="decimal" step="any" min="0" ${extra} value="${v}"></label>`;
+  const num=(k,lab,v,extra='')=>`<label>${lab}<input id="f${n.id}-${k}" data-k="${k}" data-calc type="text" autocomplete="off" spellcheck="false" ${extra} value="${v}"></label>`;
   if(n.kind==='recipe'){const r=RMAP[n.recipe];b=r.bld+(r.alt?' · Alternate':'');t=r.name;
     const alts=recipesFor(r.out[0][0]).filter(x=>x.id===r.id||recipeOK(x));
     const rp=alts.length>1?`<label class="rpick">Recipe<select id="f${n.id}-recipe" data-k="recipe">${alts.map(x=>`<option value="${x.id}"${x.id===r.id?' selected':''}>${x.name}${x.alt?' (alt)':''} · ${x.bld}</option>`).join('')}</select></label>`:'';
@@ -2074,9 +2074,20 @@ $('#qmenu').addEventListener('click',e=>{
 /* an extractor with a typed output gets just enough extractors to deliver it */
 function exFit(n){if(!(n.limit>0))return;const u=ports({...n,count:1,limit:0}).outs[0].unit;if(u>0)n.count=Math.max(1,Math.ceil(n.limit/u-1e-6));const f=document.getElementById(`f${n.id}-count`);if(f)f.value=n.count}
 /* node fields and buttons */
+/* Number boxes take simple sums: 60*2, 450/3, (120+60)/4, 2x30. Spaces and thousands commas are fine. Anything else
+   (letters, a sum left half typed) gives NaN, so the box just waits. When you leave the box or press Enter, it shows the answer. */
+function calcNum(s){s=String(s).replace(/,/g,'').replace(/[x×]/gi,'*').replace(/÷/g,'/').replace(/\s+/g,'');if(!s)return NaN;let i=0;
+  const num=()=>{const m=/^(\d+\.?\d*|\.\d+)(e[+-]?\d+)?/i.exec(s.slice(i));if(!m)throw 0;i+=m[0].length;return parseFloat(m[0])},
+    atom=()=>{if(s[i]==='-'){i++;return -atom()}if(s[i]==='+'){i++;return atom()}if(s[i]==='('){i++;const v=sum();if(s[i]!==')')throw 0;i++;return v}return num()},
+    prod=()=>{let v=atom();while(s[i]==='*'||s[i]==='/'){const o=s[i++],w=atom();v=o==='*'?v*w:v/w}return v},
+    sum=()=>{let v=prod();while(s[i]==='+'||s[i]==='-'){const o=s[i++],w=prod();v=o==='+'?v+w:v-w}return v};
+  try{const v=sum();return i===s.length&&isFinite(v)?v:NaN}catch(e){return NaN}}
+const calcShow=el=>{const v=calcNum(el.value);if(!isNaN(v)&&!/^\s*-?[\d.]+\s*$/.test(el.value))el.value=String(Math.round(v*1e6)/1e6)};
+document.addEventListener('change',e=>{if(e.target.matches&&e.target.matches('input[data-calc]'))calcShow(e.target)},true);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches&&e.target.matches('input[data-calc]')){calcShow(e.target);e.target.dispatchEvent(new Event('input',{bubbles:true}));e.target.blur()}},true);
 world.addEventListener('input',e=>{typingAt=Date.now();
   const k=e.target.dataset.k;if(!k||e.target.tagName!=='INPUT')return;
-  const n=nodeById(e.target.closest('.node').dataset.id);let v=parseFloat(e.target.value);if(k==='limit'&&e.target.value.trim()==='')v=0;if(isNaN(v))return;
+  const n=nodeById(e.target.closest('.node').dataset.id);let v=calcNum(e.target.value);if(k==='limit'&&e.target.value.trim()==='')v=0;if(isNaN(v))return;
   v=Math.max(0,v);if(k==='count'&&n.kind==='extract')v=Math.round(v);
   if(k==='limit'&&n.kind==='extract'&&v>0){n.limit=v;exFit(n);refresh();return}if(k==='prio')v=Math.max(1,Math.round(v));if(k==='rate')delete n.want;n[k]=v;
   if((n.kind==='recipe'||n.kind==='gen')&&isTarget(n)){if(k==='count')n.rate=Math.round(v*unit0(n)*1000)/1000;
@@ -3762,7 +3773,7 @@ function layPanel(M){const P=layParts(M),seg=(key,cur,a,b,la,lb)=>`<span class="
   let h=`<h3>Feeds</h3>`+M.ins.map(x=>`<div class="lrow"><span>${wIco(ITEM_CLS[x.item])}${esc(x.item)} <small>comes in from</small></span>${seg('i'+x.i,M.s.side['i'+x.i]||'L','L','R','Left','Right')}</div>`).join('')+
     M.outs.map(x=>`<div class="lrow"><span>${wIco(ITEM_CLS[x.item])}${esc(x.item)} <small>leaves to</small></span>${seg('o'+x.i,M.s.side['o'+x.i]||'R','L','R','Left','Right')}</div>`).join('')+layColourUI(M.ic)+
     `<h3>Row</h3><div class="lrow"><span>Gap between machines</span><span class="lstep"><button type="button" data-lgap="-1" aria-label="Less gap">−</button><b>${M.s.gap} m</b><button type="button" data-lgap="1" aria-label="More gap">+</button></span></div>`+
-    `<div class="lrow"><span>${esc(M.b)} footprint</span><span class="lfoot"><input type="number" min="1" step="1" value="${M.W}" data-lfoot="0" aria-label="Width in metres"> × <input type="number" min="1" step="1" value="${M.L}" data-lfoot="1" aria-label="Length in metres"> m</span></div>`+
+    `<div class="lrow"><span>${esc(M.b)} footprint</span><span class="lfoot"><input type="text" data-calc autocomplete="off" value="${M.W}" data-lfoot="0" aria-label="Width in metres"> × <input type="text" data-calc autocomplete="off" value="${M.L}" data-lfoot="1" aria-label="Length in metres"> m</span></div>`+
     `<div class="mbtns"><button type="button" class="btn" data-lreset>Line them up again</button><button type="button" class="btn" data-lfit>Fit</button></div>`+
     layPartsUI(P,`<div><span>${esc(M.b)}</span><b>${M.m} at ${fmt(M.clk)}%</b></div>`)+
     `<p class="note">Drag machines to move them, drag a belt line up or down, and flip where each feed comes in. Footprints and port spots are approximate, so check them against the game; fix a footprint above and it’s remembered. A belt carrying more than your best belt or pipe shows red (dashed red when colouring by material).</p>`;
@@ -3942,7 +3953,7 @@ $('#defsBox').addEventListener('toggle',()=>{try{localStorage.setItem(KEY+'-defs
 }
 ['#uBelt','#uPipe','#uMiner','#uShards'].forEach(q=>$(q).addEventListener('change',e=>{const v=e.target.value;UNL[{'#uBelt':'belt','#uPipe':'pipe','#uMiner':'miner','#uShards':'shards'}[q]]=q==='#uMiner'?v:+v;applyUnlocks()}));
 $('#uSloop').onchange=e=>{UNL.sloop=e.target.checked;applyUnlocks()};
-$('#uSloopHave').oninput=e=>{UNL.sloopHave=Math.max(0,Math.round(+e.target.value||0));try{localStorage.setItem('ficsit-line-planner-v1-unlocks',JSON.stringify(UNL))}catch(err){}refresh()};
+$('#uSloopHave').oninput=e=>{const v=e.target.value.trim()===''?0:calcNum(e.target.value);if(isNaN(v))return;UNL.sloopHave=Math.max(0,Math.round(v));try{localStorage.setItem('ficsit-line-planner-v1-unlocks',JSON.stringify(UNL))}catch(err){}refresh()};
 $('#uWell').onchange=e=>{UNL.well=e.target.checked;applyUnlocks()};
 function renderAlts(){const q=($('#uAltQ').value||'').trim().toLowerCase(),only=$('#uAltOnly').checked;
   const rows=ALTS.filter(r=>(!only||UNL.alts[r.id])&&(!q||(r.name+' '+r.bld+' '+recipeLine(r)).toLowerCase().includes(q)));
