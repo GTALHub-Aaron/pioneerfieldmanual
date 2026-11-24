@@ -106,6 +106,7 @@ kbd{font-family:var(--f-mono);font-size:10.5px;background:var(--panel-2);border:
 .pg>summary:hover>span:not(.icw){color:var(--accent)}
 .pg[open]{padding-bottom:6px}
 .search{display:flex;flex-direction:column;gap:4px}
+.adminline{font-size:11.5px;color:var(--muted)}.adminline .linkb{font-size:11.5px;color:var(--muted);text-decoration:underline;text-underline-offset:2px}.adminline .linkb:hover{color:var(--accent)}
 .linkb{align-self:flex-end;background:none;border:0;padding:0;font-size:11.5px;color:var(--accent);cursor:pointer}
 .linkb:hover{text-decoration:underline}
 .pal h3{font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 6px 4px;display:flex;justify-content:space-between}
@@ -489,6 +490,7 @@ button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:va
 .mpal{padding:4px 14px 16px}
 .flayers{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 4px}
 .flayers .fchip{font-size:11.5px;padding:4px 5px;gap:5px}
+.mysave{margin:2px 0 8px}.mysave .btn{width:100%}.mysave .fnote{margin:6px 0 0}.mywhere summary{cursor:pointer;color:var(--accent)}.mywhere code{font-size:11px;word-break:break-all}
 .fsync{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);margin:2px 0 6px}.fsync .linkb{font-size:11.5px;white-space:nowrap}.fsync-run{color:var(--accent);font-weight:600}.fsync .linkb:disabled{opacity:.6;cursor:default}.fsync-msg{font-size:11.5px;margin:-2px 0 6px;color:var(--fg)}
 .mnew{position:absolute;z-index:9;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--accent);border-radius:999px;box-shadow:var(--shadow);padding:5px 6px 5px 14px;font-size:12.5px;white-space:nowrap}
 .mnew button{border:0;border-radius:999px;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:4px 12px;cursor:pointer}
@@ -773,7 +775,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
         <button class="btn" id="btnRedo" title="Redo (Ctrl+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button></div>
       <div class="grp sep pmonly"><button class="btn" id="btnIO">Plans</button>
         <button class="btn" id="btnClear">Clear</button></div>
-      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button">Sign in</button><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
+      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button" hidden>Admin</button><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
         <button type="button" class="thsw" id="thSw" role="switch" aria-checked="true" aria-label="Dark mode" title="Switch light / dark"><svg class="ic sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><g stroke-linecap="round"><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g></svg><span class="trk"><span class="knob"></span></span><svg class="ic moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg></button>
         <button class="btn nar" id="tgSum" aria-controls="sum">Totals</button></div>
       <div class="grp sep"><button class="helpb" id="btnHelp" type="button" title="Help (F1)" aria-label="Help">?</button></div>
@@ -815,7 +817,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     <section class="mapv" id="mapView" aria-label="World map" hidden><canvas id="mapC"></canvas><div class="mtip" id="mapTip" hidden></div><div class="lcard" id="mapCard" hidden></div><div class="mpop" id="mapPop" hidden></div><div class="mnew" id="mapNew" hidden></div><div class="mxy" id="mapXY" hidden></div><div class="mempty" id="mapEmpty" hidden></div>
       <div class="legend mleg">Scroll to zoom · drag to pan · click a node for details · M switches views</div>
       <div class="zoom"><button id="mzOut" aria-label="Zoom out">−</button><span id="mzLbl">100%</span><button id="mzIn" aria-label="Zoom in">+</button><button id="mzFit" class="zfit" title="Fit the whole map">Fit</button></div>
-      <input type="file" id="mapImgIn" accept="image/*" multiple hidden><input type="file" id="mapDataIn" accept=".json,.js,application/json,text/javascript" hidden><input type="file" id="mapFmIn" webkitdirectory multiple hidden></section>
+      <input type="file" id="mapImgIn" accept="image/*" multiple hidden><input type="file" id="mapDataIn" accept=".json,.js,application/json,text/javascript" hidden><input type="file" id="mapFmIn" webkitdirectory multiple hidden><input type="file" id="mySaveIn" accept=".sav" hidden></section>
     <aside class="panel sum msum" id="mapSide" aria-label="Map details" hidden></aside>
     <aside class="panel wnav" id="wikiNav" aria-label="Wiki contents" hidden><div class="search"><input id="wq" type="search" placeholder="Search items and buildings" autocomplete="off" aria-label="Search the wiki"><div class="wnavbar"><label class="wonly"><input type="checkbox" id="wOnly"> Only what I can make now</label><button type="button" class="linkb" id="wFold">Collapse all</button></div></div><div id="wList"></div></aside>
     <section class="panel wpage" id="wikiPage" aria-label="Wiki page" hidden></section>
@@ -869,13 +871,13 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
 <div id="iconsDlg" class="dlg" hidden>
   <div class="box" role="dialog" aria-labelledby="icTitle">
     <h2 id="icTitle">Settings</h2>
-    <h3>Icons</h3>
+    <div id="setIcons"><h3>Icons</h3>
     <div class="acts" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
       <label class="btn" for="iconDir" style="cursor:pointer">Load icon folder…</label><input type="file" id="iconDir" webkitdirectory directory multiple hidden>
       <label class="btn" for="iconFiles" style="cursor:pointer">Pick icon files…</label><input type="file" id="iconFiles" accept="image/png,image/webp,image/jpeg" multiple hidden>
       <button class="btn" id="iconClear" type="button">Remove icons</button>
       <span class="altn" id="iconStat"></span>
-    </div>
+    </div></div>
     <h3>Wires</h3>
     <h3>Visual aids</h3>
     <label class="chk"><input type="checkbox" id="pChain"> Highlight a selected card's whole chain and dim the rest</label>
@@ -889,7 +891,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
     <h3>Behavior</h3>
     <label class="chk"><input type="checkbox" id="pTips"> Show rotating shortcut tips in the toolbar</label>
     <label class="chk"><input type="checkbox" id="pConfirm"> Ask for a second click before Clear</label>
-    <div class="acts" style="display:flex;justify-content:flex-end"><button class="btn primary" id="icDone" type="button">Done</button></div>
+    <div class="acts" style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span class="adminline" id="adminLine"></span><button class="btn primary" id="icDone" type="button">Done</button></div>
   </div>
 </div>
 <div id="helpDlg" class="dlg" hidden>
@@ -948,7 +950,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
         <dt>Sharing</dt><dd>In Plans, <em>Share a plan as a file or text</em> copies a plan or saves a file someone else can open in their planner.</dd>
         <dt>Game progress</dt><dd>What you've unlocked. Locked buildings and recipes are hidden, and nothing is planned faster than your best belt.</dd>
         <dt>New card defaults</dt><dd>At the top of the left panel: tier, shards, purity and Somersloops for cards you add. <em>Apply to all</em> updates existing cards.</dd>
-        <dt>Settings</dt><dd>Icons, wire animation, wire labels, number detail, toolbar tips and the Clear confirmation.</dd>
+        <dt>Settings</dt><dd>Wire animation, wire labels, number detail, toolbar tips and the Clear confirmation.</dd>
         <dt>Icons</dt><dd>Put your exported icon folder next to the planner and name it <code>icons</code>, or load it from Settings. Click any icon to see it larger.</dd>
         <dt>Undo</dt><dd>Every change can be undone, including Clear.</dd>
       </dl>
@@ -2509,15 +2511,455 @@ function liveIngest(d){if(!d||!Array.isArray(d.b))return false;
   d.wires.forEach(([a,b,c,e])=>line(P.wire,[a,b,c,e]));
   LIVE.d=d;LIVE.paths=P;LIVE.bl=bl;LIVE.u=u;LIVE.found=new Set(d.found||[]);mineLoad(d.synced);
   LIVE.pl=(d.players||[]).map(p=>{const c=tm(p.x,p.y);return{...p,x:lM(p.x),y:lM(p.y),z:lM(p.z),mx:c.x,my:c.y}});return true}
+/* ---- reading a save file ---- */
+/* Satisfactory 1.1 save (.sav) -> PFM map layer. Browser port of sav.py + extract.py.
+   Self-contained on purpose: the PFM page turns this one function into a Web Worker. */
+async function pfmParseSave(input, progress) {
+  const say = progress || (() => {});
+  const raw = input instanceof Uint8Array ? input : new Uint8Array(input);
+  const T = (a, ...m) => { const e = new Error(a); throw e; };
+  const le = (u, p) => new DataView(u.buffer, u.byteOffset + p, 8).getBigInt64(0, true);
+
+  /* ---- decompress: zlib chunks, each behind a 49-byte header ---- */
+  const TAG = [0xc1, 0x83, 0x2a, 0x9e];
+  const isTag = (u, p) => u[p] === TAG[0] && u[p + 1] === TAG[1] && u[p + 2] === TAG[2] && u[p + 3] === TAG[3];
+  let p0 = -1;
+  for (let i = raw.indexOf(TAG[0]); i >= 0; i = raw.indexOf(TAG[0], i + 1)) if (isTag(raw, i)) { p0 = i; break; }
+  if (p0 < 0) T('This does not look like a Satisfactory save file.');
+  const parts = [];
+  for (let p = p0; p + 49 <= raw.length && isTag(raw, p);) {
+    const csz = Number(le(raw, p + 17)), usz = Number(le(raw, p + 25));
+    let z = p + 49;
+    if (raw[z] !== 0x78) { z = -1; for (let k = p + 8; k < p + 80; k++) if (raw[k] === 0x78 && [1, 0x5e, 0x9c, 0xda].includes(raw[k + 1])) { z = k; break; } }
+    if (z < 0 || csz <= 0) T('Could not unpack this save file.');
+    parts.push({ s: raw.subarray(z, z + csz), usz });
+    p = z + csz;
+  }
+  say('Unpacking save', 0.05);
+  const inflate = async s => new Uint8Array(await new Response(new Blob([s]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer());
+  const outs = [];
+  for (let i = 0; i < parts.length; i += 32) {
+    outs.push(...await Promise.all(parts.slice(i, i + 32).map(x => inflate(x.s))));
+    say('Unpacking save', 0.05 + 0.15 * i / parts.length);
+  }
+  let total = 0; for (const o of outs) total += o.length;
+  const b = new Uint8Array(total); { let o = 0; for (const x of outs) { b.set(x, o); o += x.length; } }
+  outs.length = 0; parts.length = 0;
+  const dv = new DataView(b.buffer);
+  const N = b.length;
+
+  const find = (pat, from = 0, to = N) => {
+    for (let i = b.indexOf(pat[0], from); i >= 0 && i <= to - pat.length; i = b.indexOf(pat[0], i + 1)) {
+      let k = 1; while (k < pat.length && b[i + k] === pat[k]) k++;
+      if (k === pat.length) return i;
+    }
+    return -1;
+  };
+  const bytes = s => Array.from(s, c => c.charCodeAt(0));
+
+  /* ---- reader ---- */
+  class R {
+    constructor(p = 0) { this.p = p; }
+    chk(n) { if (this.p < 0 || this.p + n > N) T('read past end'); }
+    i32() { this.chk(4); const v = dv.getInt32(this.p, true); this.p += 4; return v; }
+    i64() { this.chk(8); const v = Number(dv.getBigInt64(this.p, true)); this.p += 8; return v; }
+    f32() { this.chk(4); const v = dv.getFloat32(this.p, true); this.p += 4; return v; }
+    f64() { this.chk(8); const v = dv.getFloat64(this.p, true); this.p += 8; return v; }
+    u8() { this.chk(1); return b[this.p++]; }
+    fN(n, f) { const a = []; for (let k = 0; k < n; k++) a.push(f === 'f' ? this.f32() : f === 'd' ? this.f64() : this.i32()); return a; }
+    fs() {
+      let n = this.i32();
+      if (n === 0) return '';
+      if (n < 0) {
+        n = -n; this.chk(2 * n);
+        let s = ''; for (let k = 0; k < n - 1; k++) s += String.fromCharCode(b[this.p + 2 * k] | b[this.p + 2 * k + 1] << 8);
+        this.p += 2 * n; return s;
+      }
+      this.chk(n);
+      let s = ''; for (let k = 0; k < n - 1; k++) s += String.fromCharCode(b[this.p + k]);
+      this.p += n; return s;
+    }
+  }
+
+  function readHeader(r) {
+    const t = r.i32(), h = { t, cls: r.fs(), lvl: r.fs(), inst: r.fs() };
+    if (t === 1) {
+      h.flags = r.i32(); h.nt = r.i32();
+      h.rot = r.fN(4, 'f'); h.pos = r.fN(3, 'f'); h.scl = r.fN(3, 'f'); h.pil = r.i32();
+    } else if (t === 0) { h.flags = r.i32(); h.outer = r.fs(); }
+    else T('bad header type');
+    return h;
+  }
+  const NATIVE = { Vector: 24, Rotator: 24, Quat: 32, Vector2D: 16, LinearColor: 16, Color: 4, Guid: 16, IntPoint: 8, Box: 49, Vector4: 32 };
+  function readType(r) { const name = r.fs(), n = r.i32(), sub = []; for (let k = 0; k < n; k++) sub.push(readType(r)); return [name, sub]; }
+  function readProps(r) {
+    const out = {}, multi = new Set();
+    for (;;) {
+      const name = r.fs();
+      if (name === 'None' || name === '') break;
+      const t = readType(r), size = r.i32(), flags = r.u8();
+      if (flags & 1) r.i32();
+      if (flags & 2) r.p += 16;
+      if (flags & 4) { const ext = r.u8(); if (ext & 2) r.p += 1; }
+      const st = r.p; let v;
+      try { v = readValue(r, t, size, flags); } catch (e) { v = { _err: 1 }; }
+      r.p = st + size;
+      if (!(name in out)) out[name] = v;
+      else { if (!multi.has(name)) { out[name] = [out[name]]; multi.add(name); } out[name].push(v); }
+    }
+    return out;
+  }
+  const objref = r => { const l = r.fs(); return { ref: r.fs(), l }; };
+  function readValue(r, t, size, flags) {
+    const tn = t[0];
+    switch (tn) {
+      case 'BoolProperty': return !!(flags & 0x10);
+      case 'IntProperty': return r.i32();
+      case 'Int64Property': return r.i64();
+      case 'FloatProperty': return r.f32();
+      case 'DoubleProperty': return r.f64();
+      case 'StrProperty': case 'NameProperty': case 'EnumProperty': return r.fs();
+      case 'ObjectProperty': case 'SoftObjectProperty': return objref(r);
+      case 'ByteProperty': return size > 1 ? r.fs() : r.u8();
+      case 'StructProperty': return readStruct(r, t[1].length ? t[1][0][0] : '', size);
+      case 'ArrayProperty': case 'SetProperty': {
+        const it = t[1][0];
+        if (tn === 'SetProperty') r.i32();
+        const n = r.i32(); if (n < 0 || n > N) T('bad count');
+        const a = []; for (let k = 0; k < n; k++) a.push(readElem(r, it)); return a;
+      }
+    }
+    return null;
+  }
+  function readElem(r, t) {
+    if (t[0] === 'StructProperty') return readStruct(r, t[1].length ? t[1][0][0] : '', undefined);
+    return t[0] === 'ByteProperty' ? r.u8() : readValue(r, t, 0, 0);
+  }
+  function readStruct(r, sn, size) {
+    sn = sn.split('.').pop();
+    if (sn === 'Vector' || sn === 'Rotator') return r.fN(3, 'd');
+    if (sn === 'Quat' || sn === 'Vector4') return r.fN(4, 'd');
+    if (sn === 'LinearColor') return r.fN(4, 'f');
+    if (sn === 'Color') { r.chk(4); const v = [b[r.p], b[r.p + 1], b[r.p + 2], b[r.p + 3]]; r.p += 4; return v; }
+    if (sn === 'Guid') { r.p += 16; return null; }
+    if (sn === 'Vector2D') return r.fN(2, 'd');
+    if (sn === 'IntPoint') return r.fN(2, 'i');
+    if (sn === 'InventoryItem' && size !== 0) { r.i32(); return { _item: r.fs() }; }
+    if (sn in NATIVE) { r.p += NATIVE[sn]; return null; }
+    return readProps(r);
+  }
+
+  /* ---- helpers from extract.py ---- */
+  const pyRound = x => { const f = Math.floor(x), d = x - f; return d > 0.5 ? f + 1 : d < 0.5 ? f : (f % 2 === 0 ? f : f + 1); };
+  const round1 = x => pyRound(x * 10) / 10;
+  const r10 = v => pyRound(v / 10);
+  const qrot = (q, v) => {
+    const [x, y, z, w] = q, [vx, vy, vz] = v;
+    const tx = 2 * (y * vz - z * vy), ty = 2 * (z * vx - x * vz), tz = 2 * (x * vy - y * vx);
+    return [vx + w * tx + (y * tz - z * ty), vy + w * ty + (z * tx - x * tz), vz + w * tz + (x * ty - y * tx)];
+  };
+  const yaw = q => { const [x, y, z, w] = q; return Math.atan2(2 * (w * z + x * y), 1 - 2 * (y * y + z * z)) * 180 / Math.PI; };
+  const short = p => p ? p.split('.').pop() : '';
+  const isRef = x => x && typeof x === 'object' && typeof x.ref === 'string';
+  const isNum = x => typeof x === 'number';
+  function hermite(p0, m0, p1, m1, n) {
+    const out = [];
+    for (let k = 1; k <= n; k++) {
+      const t = k / n, t2 = t * t, t3 = t2 * t, a = 2 * t3 - 3 * t2 + 1, bb = t3 - 2 * t2 + t, c = -2 * t3 + 3 * t2, d = t3 - t2;
+      out.push([0, 1, 2].map(i => a * p0[i] + bb * m0[i] + c * p1[i] + d * m1[i]));
+    }
+    return out;
+  }
+  function splineWorld(h, pts) {
+    const q = h.rot, pos = h.pos, loc = [pts[0].Location];
+    for (let j = 0; j + 1 < pts.length; j++) {
+      const a = pts[j], c = pts[j + 1], p0 = a.Location, p1 = c.Location, m0 = a.LeaveTangent, m1 = c.ArriveTangent;
+      const ch = [0, 1, 2].map(i => p1[i] - p0[i]);
+      const L = Math.hypot(...ch) || 1;
+      const dev = m => { const ml = Math.hypot(...m) || 1; return 1 - (m[0] * ch[0] + m[1] * ch[1] + m[2] * ch[2]) / (ml * L); };
+      const straight = dev(m0) < 1e-3 && dev(m1) < 1e-3;
+      const n = straight ? 1 : Math.max(2, Math.min(12, Math.floor(L / 250) + 2));
+      loc.push(...hermite(p0, m0, p1, m1, n));
+    }
+    return loc.map(p => { const w = qrot(q, p); return [pos[0] + w[0], pos[1] + w[1], pos[2] + w[2]]; });
+  }
+  const SKIP = /Sign|Ladder|VehiclePath|ConveyorPole|PipelineSupport|PipeHyperSupport|WallHole|CeilingAttachment|FoundationPassthrough|FlowIndicator|StreetLight|ConveyorMonitor|Potty|PowerPoleWall/;
+  const COLLECT = /^(BP_Crystal|BP_WAT|BP_DropPod)/;
+  const PERSIST = bytes('$\0\0\0/Script/FactoryGame.FGWorldSettings\0\x11\0\0\0Persistent_Level');
+
+  /* ---- persistent level ---- */
+  say('Finding the factory', 0.22);
+  const pi = find(PERSIST);
+  if (pi < 0) T('Could not find the world in this save. Is it from Satisfactory 1.0 or newer?');
+  const hs = [], objs = [];
+  {
+    const r = new R(pi - 16); r.i64(); const n = r.i32();
+    for (let k = 0; k < n; k++) hs.push(readHeader(r));
+    r.i32(); r.fs(); const c = r.i32();
+    for (let k = 0; k < c; k++) { r.fs(); r.fs(); }
+    r.i64(); const on = r.i32();
+    for (let k = 0; k < on; k++) { r.i32(); r.i32(); const sz = r.i32(); objs.push([r.p, sz]); r.p += sz + 4; }
+  }
+  const idx = new Map(); hs.forEach((h, i) => idx.set(h.inst, i));
+  const cache = new Map();
+  function P(i) {
+    if (cache.has(i)) return cache.get(i);
+    const h = hs[i], [p] = objs[i] || [-1]; let pr = {};
+    if (p >= 0) {
+      const r = new R(p);
+      try {
+        if (h.t === 1) { r.fs(); r.fs(); const n = r.i32(); for (let k = 0; k < n; k++) objref(r); }
+        r.u8(); pr = readProps(r);
+      } catch (e) { pr = {}; }
+    }
+    cache.set(i, pr); return pr;
+  }
+  const comp = (inst, name) => idx.get(inst + '.' + name);
+  function invTot(ci) {
+    const tot = new Map(); let used = 0, all = [];
+    if (ci === undefined) return { tot, used, len: 0 };
+    const st = P(ci).mInventoryStacks; all = Array.isArray(st) ? st : [];
+    for (const s of all) {
+      if (!s || typeof s !== 'object' || Array.isArray(s)) continue;
+      const it = s.Item, n = s.NumItems || 0, path = it && typeof it === 'object' ? it._item : null;
+      if (path && n) { const k = short(path); tot.set(k, (tot.get(k) || 0) + n); used++; }
+    }
+    return { tot, used, len: all.length };
+  }
+  function invSummary(ci, limit = 12, slots = false) {
+    if (ci === undefined) return null;
+    const { tot, used, len } = invTot(ci);
+    const items = [...tot.entries()].sort((a, c) => c[1] - a[1]).slice(0, limit);
+    if (slots) return [items, used, len];
+    return items.length ? items : null;
+  }
+  function allowed(ci) {
+    if (ci === undefined) return null;
+    const a = (P(ci).mAllowedItemDescriptors || []).filter(x => isRef(x) && x.ref.startsWith('/Game')).map(x => short(x.ref));
+    return a.length ? a : null;
+  }
+  const classes = [], cidx = new Map();
+  const C = name => { if (!cidx.has(name)) { cidx.set(name, classes.length); classes.push(name); } return cidx.get(name); };
+
+  say('Reading buildings', 0.3);
+  const blds = [], belts = [], pipes = [], tubes = [], wires = [], players = [];
+  for (let i = 0; i < hs.length; i++) {
+    if (i % 4000 === 0) say('Reading buildings', 0.3 + 0.5 * i / hs.length);
+    const h = hs[i];
+    if (h.t !== 1) continue;
+    const cls = short(h.cls), inst = h.inst;
+    if (cls === 'Char_Player_C') {
+      const pr = P(i);
+      const pl = { n: pr.mCachedPlayerName || 'Pioneer', x: r10(h.pos[0]), y: r10(h.pos[1]), z: r10(h.pos[2]) };
+      const r3 = invSummary(comp(inst, 'inventory'), 80, true);
+      if (r3) { const [items, used, tot] = r3; if (items.length) pl.i = items; if (tot) pl.slots = [used, tot]; }
+      const eq = [];
+      for (const slot of ['HeadSlot', 'BodySlot', 'BackSlot', 'LegsSlot', 'ArmSlot'])
+        for (const k of invTot(comp(inst, slot)).tot.keys()) if (k.startsWith('BP_Equipment') && !eq.includes(k)) eq.push(k);
+      if (eq.length) pl.eq = eq;
+      const n = ['inventory', 'ArmSlot'].reduce((s, x) => s + (invTot(comp(inst, x)).tot.get('Desc_WAT1_C') || 0), 0);
+      if (n) pl.sl = n;
+      players.push(pl); continue;
+    }
+    if (!h.cls.includes('/Buildable/') || SKIP.test(cls)) continue;
+    if (cls.includes('ConveyorBelt') || cls.startsWith('Build_Pipeline') && !cls.includes('Pump') && !cls.includes('Junction') || cls === 'Build_PipeHyper_C') {
+      const sp = P(i).mSplineData;
+      if (!Array.isArray(sp) || !sp.length) continue;
+      let pts; try { pts = splineWorld(h, sp); } catch (e) { continue; }
+      const flat = [];
+      for (const p of pts) { const x = r10(p[0]), y = r10(p[1]); if (flat.length < 2 || flat[flat.length - 2] !== x || flat[flat.length - 1] !== y) flat.push(x, y); }
+      const z = r10(pts.reduce((s, p) => s + p[2], 0) / pts.length);
+      if (cls.includes('ConveyorBelt')) { const m = /Mk(\d)/.exec(cls); belts.push([m ? +m[1] : 1, z, flat]); }
+      else if (cls.includes('Hyper')) tubes.push([0, z, flat]);
+      else pipes.push([cls.includes('MK2') ? 2 : 1, z, flat]);
+      continue;
+    }
+    if (cls === 'Build_PowerLine_C') {
+      try { const [a, c] = P(i).mWireInstances[0].Locations; wires.push([r10(a[0]), r10(a[1]), r10(c[0]), r10(c[1])]); } catch (e) {}
+      continue;
+    }
+    const [x, y, z] = h.pos;
+    const rec = [C(cls), r10(x), r10(y), r10(z), pyRound(yaw(h.rot))], info = {};
+    const pr = P(i);
+    if (isRef(pr.mCurrentRecipe)) info.r = short(pr.mCurrentRecipe.ref);
+    if ('mCurrentPotential' in pr && isNum(pr.mCurrentPotential)) info.c = round1(pr.mCurrentPotential * 100);
+    else if ('mPendingPotential' in pr && isNum(pr.mPendingPotential)) info.c = round1(pr.mPendingPotential * 100);
+    if (isNum(pr.mCurrentProductionBoost)) info.s = pyRound(pr.mCurrentProductionBoost * 100);
+    const d = pr.mLastProductivityMeasurementDuration;
+    if (isNum(d) && d) info.p = pyRound(100 * (pr.mLastProductivityMeasurementProduceDuration || 0) / d);
+    if (pr.mIsProductionPaused) info.off = 1;
+    const pot = comp(inst, 'InventoryPotential');
+    if (pot !== undefined) {
+      const items = new Map(invSummary(pot) || []);
+      if (items.get('Desc_CrystalShard_C')) info.sh = items.get('Desc_CrystalShard_C');
+      if (items.get('Desc_WAT1_C')) info.sl = items.get('Desc_WAT1_C');
+    }
+    const pwi = comp(inst, 'powerInfo');
+    if (pwi !== undefined && !cls.includes('Generator')) {
+      const tc = P(pwi).mTargetConsumption;
+      if (isNum(tc) && tc > 0) info.pw = Math.round(tc * 100) / 100;
+    }
+    if ('mCurrentRecipe' in pr) {
+      const ii = comp(inst, 'InputInventory'), oi = comp(inst, 'OutputInventory');
+      const a = invSummary(ii), b2 = invSummary(oi);
+      if (a) info.in = a; if (b2) info.out = b2;
+      const aa = allowed(ii), ob = allowed(oi);
+      if (aa) info.ia = aa; if (ob) info.oa = ob;
+    }
+    if (cls.includes('Storage') || cls.includes('CentralStorage')) {
+      const si = comp(inst, 'StorageInventory') ?? comp(inst, 'inventory');
+      const r3 = invSummary(si, 24, true);
+      if (r3) { const [items, used, tot] = r3; if (items.length) info.i = items; if (tot) info.slots = [used, tot]; }
+      const n = invTot(si).tot.get('Desc_WAT1_C') || 0;
+      if (n) info.sl = n;
+    } else if (cls.includes('Generator')) {
+      const pi2 = comp(inst, 'powerInfo');
+      if (pi2 !== undefined) {
+        const cap = P(pi2).mDynamicProductionCapacity || P(pi2).mBaseProduction;
+        if (isNum(cap) && cap) info.mw = round1(cap);
+      }
+      const s = invSummary(comp(inst, 'FuelInventory') ?? comp(inst, 'InputInventory'));
+      if (s) info.i = s;
+    }
+    if (cls.includes('Miner') || cls.includes('Pump') && !cls.includes('Pipeline') || cls.includes('Fracking')) {
+      const ex = pr.mExtractableResource;
+      if (isRef(ex)) {
+        const ri = idx.get(ex.ref);
+        if (ri !== undefined) {
+          const rp = P(ri);
+          if (isRef(rp.mResourceClass)) info.res = short(rp.mResourceClass.ref);
+          if ('mPurity' in rp) info.pur = String(rp.mPurity).split('_').pop();
+        }
+      }
+    }
+    if (Object.keys(info).length) rec.push(info);
+    blds.push(rec);
+  }
+
+  /* ---- lightweight buildables (foundations, walls, ramps ...) ---- */
+  say('Reading foundations', 0.82);
+  const found = [];
+  const NONE = bytes('None\0');
+  for (let i = 0; i < hs.length; i++) {
+    if (!hs[i].inst.endsWith('LightweightBuildableSubsystem')) continue;
+    const r = new R(find(NONE, objs[i][0]) + 5);
+    r.i32(); r.i32(); const ncls = r.i32();
+    for (let c = 0; c < ncls; c++) {
+      r.i32(); const cls = r.fs(), n = r.i32(), sc = short(cls);
+      const keep = !/Railing|Beam|Pillar|Barrier|Catwalk|Shelf|Frame/.test(sc);
+      for (let k = 0; k < n; k++) {
+        r.chk(80);
+        const rot = [0, 1, 2, 3].map(j => dv.getFloat64(r.p + 8 * j, true)), pos = [0, 1, 2].map(j => dv.getFloat64(r.p + 32 + 8 * j, true));
+        r.p += 80; r.i32(); r.fs();
+        for (let j = 0; j < 6; j++) r.fs();
+        r.p += 32; r.i32(); r.fs(); r.u8(); r.i32();
+        const rec = r.fs(); r.fs(); r.fs();
+        if (r.i32()) { r.i32(); r.fs(); const n2 = r.i32(); r.p += n2; }
+        r.u8(); r.i32();
+        if (rec !== '' && !rec.startsWith('/Game')) T('Could not read the foundations in this save.');
+        if (keep) found.push([C(sc), r10(pos[0]), r10(pos[1]), r10(pos[2]), pyRound(yaw(rot))]);
+      }
+    }
+    break;
+  }
+
+  /* ---- collected slugs, Somersloops, Mercer Spheres, opened crash sites ---- */
+  say('Checking collectibles', 0.9);
+  let got = [];
+  try {
+    function refs(r, end) {
+      const st = r.p;
+      try { const n = r.i32(), out = []; if (n < 0 || n > N) T('x'); for (let k = 0; k < n; k++) out.push([r.fs(), r.fs()]); if (r.p === end) return out; } catch (e) {}
+      r.p = st;
+      try {
+        const m = r.i32(), out = []; if (m < 0 || m > N) T('x');
+        for (let j = 0; j < m; j++) { r.fs(); const n = r.i32(); if (n < 0 || n > N) T('x'); for (let k = 0; k < n; k++) out.push([r.fs(), r.fs()]); }
+        if (r.p === end) return out;
+      } catch (e) {}
+      return null;
+    }
+    const gone = [];
+    const isAZ = c => (c >= 48 && c <= 57) || (c >= 65 && c <= 90);
+    for (let i = b.indexOf(0x1a); i >= 0 && i + 30 <= N; i = b.indexOf(0x1a, i + 1)) {
+      if (b[i + 1] || b[i + 2] || b[i + 3] || b[i + 29] !== 0) continue;
+      let ok = true; for (let k = 4; k < 29; k++) if (!isAZ(b[i + k])) { ok = false; break; }
+      if (!ok) continue;
+      const p = i + 30;
+      try {
+        if (p + 8 > N) continue;
+        const L = Number(dv.getBigInt64(p, true));
+        if (!(L > 0 && L < 5000000)) continue;
+        const r = new R(p + 8), base = r.p, n = r.i32();
+        if (!(n >= 0 && n < 200000)) continue;
+        for (let k = 0; k < n; k++) readHeader(r);
+        const c = refs(r, base + L);
+        if (c === null) continue;
+        gone.push(...c);
+        r.p = base + L; const OL = r.i64(); r.p += OL;
+        const n2 = r.i32();
+        if (n2 >= 0 && n2 < 5000) { try { const t = []; for (let k = 0; k < n2; k++) t.push([r.fs(), r.fs()]); gone.push(...t); } catch (e) {} }
+        i = p - 1;
+      } catch (e) { continue; }
+    }
+    {
+      const r = new R(pi - 16), L = r.i64(), base = r.p, n = r.i32();
+      for (let k = 0; k < n; k++) readHeader(r);
+      const c = refs(r, base + L);
+      if (c) gone.push(...c);
+    }
+    const names = new Set(gone.map(x => x[1].split('.').pop()));
+    hs.forEach((h, i) => {
+      if (h.cls.includes('DropPod') && h.t === 1) { const pr = P(i); if (pr.mHasBeenLooted || pr.mHasBeenOpened) names.add(h.inst.split('.').pop()); }
+    });
+    got = [...names].filter(n => COLLECT.test(n)).sort();
+  } catch (e) { got = []; }
+
+  say('Done', 1);
+  return { v: 1, synced: Math.floor(Date.now() / 1000), cls: classes, b: blds, f: found, found: got, belts, pipes, tubes, wires, players };
+}
+
+/* ---- your own save: read in the browser (in a Web Worker) and kept in this browser only, never uploaded ---- */
+const MYSAVE={name:'',busy:''};
+function saveParse(buf){
+  const run=()=>pfmParseSave(buf,(m)=>{MYSAVE.busy=m+'…';mapPalRender()});
+  let w;try{w=new Worker(URL.createObjectURL(new Blob([`const pfmParseSave=${pfmParseSave.toString()};
+onmessage=async e=>{try{const d=await pfmParseSave(e.data,(m,p)=>postMessage({m,p}));postMessage({d})}catch(x){postMessage({err:String(x&&x.message||x)})}}`],{type:'text/javascript'})))}catch(e){return run()}
+  return new Promise((res,rej)=>{w.onmessage=e=>{const m=e.data;if(m.m){MYSAVE.busy=`${m.m}… ${Math.round(m.p*100)}%`;mapPalRender();return}
+      w.terminate();m.err?rej(new Error(m.err)):res(m.d)};
+    w.onerror=e=>{e.preventDefault();w.terminate();run().then(res,rej)};w.postMessage(buf,[buf])})}
+async function mySaveLoad(f){if(!f)return;if(!/\.sav$/i.test(f.name)){flash('Pick a .sav file from your Satisfactory save folder');return}
+  if(MYSAVE.busy)return;MYSAVE.busy='Opening save…';mapPalRender();
+  try{const d=await saveParse(await f.arrayBuffer());if(f.lastModified)d.synced=Math.floor(f.lastModified/1000);
+    LIVE.pending=null;liveBanner();if(!liveIngest(d))throw new Error('Nothing to show from that save.');
+    LIVE.src='save';LIVE.err='';LIVE.at=Date.now();MYSAVE.name=f.name;LPIN=null;MAP.pop=null;$('#mapPop').hidden=true;
+    if(MAPF.live)MAPF.live.on=true;
+    try{await MDB.put('mysave',{name:f.name,d})}catch(x){flash('Your save is on the map for now, but this browser won’t keep it after a reload')}
+    flash(`Loaded ${f.name}: ${d.b.length.toLocaleString()} buildings, ${d.belts.length.toLocaleString()} belts`)}
+  catch(x){flash('Couldn’t read that save. '+(x&&x.message||''))}
+  MYSAVE.busy='';mapPalRender();mapSideRender();mapDraw()}
+async function mySaveClear(){try{await MDB.del('mysave')}catch(x){}LIVE.src='';MYSAVE.name='';liveClear();flash('Your save was removed from this browser');
+  if(AUTH.session&&AUTH.admin)liveLoad()}
+async function mySaveBoot(){try{const s=await MDB.get('mysave');if(s&&s.d&&liveIngest(s.d)){LIVE.src='save';MYSAVE.name=s.name||'your save';LIVE.at=Date.now()}}catch(e){}}
+const liveIsSave=()=>LIVE.src==='save';
 /* ---- GTALHub sign-in: the server layer is only for accounts on the sync-map function's list ---- */
 const SB_URL='https://hjwuluhdiczmssldyeus.supabase.co',SB_KEY='sb_publishable_zAZpo7UDyx1eHD_HpayR-g_RRjdgtO9',LIVE_FN=SB_URL+'/functions/v1/sync-map';
 const LIVE_RUN_URL='https://github.com/GTALHub-Aaron/pioneerfieldmanual/actions/workflows/live-map.yml';
-const AUTH={sb:null,session:null,role:null,status:'out'};  /* status: out | in | noaccess */
+const AUTH={sb:null,session:null,role:null,status:'out',admin:false};  /* status: out | in | noaccess; admin: a GTALHub admin (hub_members) */
+/* only GTALHub admins may sign in here; anyone else is signed straight back out */
+async function adminCheck(){try{const {data,error}=await AUTH.sb.rpc('is_hub_member');return !error&&data===true}catch(e){return false}}
 async function authInit(){try{const {createClient}=await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
     AUTH.sb=createClient(SB_URL,SB_KEY);const {data}=await AUTH.sb.auth.getSession();AUTH.session=data.session;
     AUTH.sb.auth.onAuthStateChange((ev,s)=>{const was=AUTH.session&&AUTH.session.user.id;AUTH.session=s;if((s&&s.user.id)!==was)authChanged()})}catch(e){}
   authChanged()}
-function authChanged(){acctRender();if(AUTH.session){AUTH.status='in';liveLoad()}else{AUTH.status='out';AUTH.role=null;liveClear()}}
+async function authChanged(){
+  if(AUTH.session){AUTH.admin=await adminCheck();if(!AUTH.admin){if(AUTH.sb)await AUTH.sb.auth.signOut();return}
+    AUTH.status='in';acctRender();adminRender();liveLoad()}
+  else{AUTH.admin=false;AUTH.status='out';AUTH.role=null;acctRender();adminRender();if(liveIsSave())mapPalRender();else liveClear()}}
+function adminRender(){const si=$('#setIcons');if(si)si.hidden=!(AUTH.admin||localPage());mapPalRender();mapEmpty();const el=$('#adminLine');if(!el)return;const s=AUTH.session;
+  el.innerHTML=s&&AUTH.admin?`Admin: ${esc((s.user.email||'').split('@')[0])} · <button type="button" class="linkb" data-adminout>Sign out</button>`:`<button type="button" class="linkb" data-adminin>Admin sign-in</button>`}
+document.addEventListener('click',async e=>{
+  if(e.target.closest('[data-adminin]'))authOpen();
+  else if(e.target.closest('[data-adminout]')&&AUTH.sb)await AUTH.sb.auth.signOut()});
 function liveClear(){Object.assign(LIVE,{d:null,paths:null,bl:[],pl:[],found:new Set(),mine:new Set(),pending:null,running:false,syncMsg:'',err:''});LPIN=null;MAP.pop=null;
   const p=$('#mapPop');if(p)p.hidden=true;liveBanner();mapPalRender();mapSideRender();mapDraw()}
 async function liveFn(what,method='GET'){const s=AUTH.session;if(!s)throw Object.assign(new Error('sign in'),{code:401});
@@ -2526,12 +2968,13 @@ async function liveFn(what,method='GET'){const s=AUTH.session;if(!s)throw Object
   if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
 /* a newer snapshot is offered with a notice instead of swapping in under your feet (it also clears your own found-marks) */
 async function liveLoad(){if(!AUTH.session)return;try{const m=await liveFn('meta');AUTH.role=m.role;AUTH.status='in';acctRender();
+    if(liveIsSave()){mapPalRender();return}
     if(!m.synced){LIVE.err='no snapshot yet';mapPalRender();return}
     if(LIVE.d&&m.synced<=LIVE.d.synced)return;if(LIVE.pending&&m.synced<=LIVE.pending.d.synced)return;
     const d=await liveFn('live');
     if(!LIVE.d){if(liveIngest(d)){LIVE.err='';LIVE.at=Date.now();mapPalRender();mapSideRender();mapDraw()}}
     else{LIVE.pending={d};liveBanner()}}
-  catch(e){LIVE.err=String(e.message||e);if(e.code===403){liveClear();AUTH.status='noaccess'}acctRender();mapPalRender();mapSideRender()}}
+  catch(e){LIVE.err=String(e.message||e);if(e.code===403){if(!liveIsSave())liveClear();AUTH.status='noaccess'}acctRender();mapPalRender();mapSideRender()}}
 function liveApply(){const p=LIVE.pending;if(!p)return;LIVE.pending=null;if(liveIngest(p.d)){LIVE.at=Date.now();MAP.pop=null;$('#mapPop').hidden=true;
     if(LPIN&&LPIN.b){const o=LPIN.b;LPIN=null;const nb=LIVE.bl.find(b=>b.cls===o.cls&&Math.abs(b.x-o.x)<50&&Math.abs(b.y-o.y)<50);if(nb)LPIN={b:nb}}
     mapPalRender();mapSideRender();mapDraw()}liveBanner()}
@@ -2554,13 +2997,13 @@ async function liveWatch(){LIVE.watchUntil=Date.now()+12*60000;if(LIVE.watchT)re
         if(was!==LIVE.running)mapPalRender();if(was&&!LIVE.running){LIVE.syncMsg='';LIVE.syncAt=0;await liveLoad();mapPalRender()}}}catch(e){}
     LIVE.watchT=setTimeout(tick,30000)};LIVE.watchT=setTimeout(tick,8000)}
 /* account button in the top bar and the sign-in dialog */
-function acctRender(){const b=$('#btnAcct');if(!b)return;const s=AUTH.session;
+function acctRender(){const b=$('#btnAcct');if(!b)return;const s=AUTH.session;b.hidden=!(s&&AUTH.admin);
   b.textContent=s?'● '+(s.user.email||'Signed in').split('@')[0]:'Sign in';b.classList.toggle('on',!!s);
   b.title=s?`Signed in as ${s.user.email}${AUTH.status==='noaccess'?' (no server access)':''}`:'Sign in with your GTALHub account'}
 function authOpen(){const d=$('#authDlg'),s=AUTH.session;
   d.innerHTML=s?`<form method="dialog"><h2>Account</h2><p class="mstat">Signed in as <b>${esc(s.user.email)}</b>${AUTH.status==='noaccess'?'<br>This account doesn’t have access to the server map.':AUTH.role==='admin'?'<br>Admin':''}</p>
       <div class="mbtns"><button type="button" class="btn" data-aout>Sign out</button><button class="btn" value="close">Close</button></div></form>`:
-    `<form id="authForm"><h2>Sign in</h2><p class="mstat">Use your GTALHub account, the same one as Weigh-Off.</p>
+    `<form id="authForm"><h2>Admin sign-in</h2><p class="mstat">For GTALHub admins only. Everyone else can use the whole Field Manual without signing in.</p>
       <label>Email<input type="email" name="email" autocomplete="username" required></label><label>Password<input type="password" name="password" autocomplete="current-password" required></label>
       <p class="auth-err" hidden></p><div class="mbtns"><button class="btn primary" type="submit">Sign in</button><button class="btn" type="button" data-aclose>Cancel</button></div></form>`;
   d.showModal();const f=$('#authForm');if(f)f.email.focus()}
@@ -2570,7 +3013,8 @@ $('#authDlg').addEventListener('click',async e=>{const d=$('#authDlg');if(e.targ
 $('#authDlg').addEventListener('submit',async e=>{if(e.target.id!=='authForm')return;e.preventDefault();const f=e.target,er=f.querySelector('.auth-err'),btn=f.querySelector('[type=submit]');
   if(!AUTH.sb){er.textContent='Sign-in isn’t available right now. Check your connection and reload.';er.hidden=false;return}
   btn.disabled=true;er.hidden=true;const {error}=await AUTH.sb.auth.signInWithPassword({email:f.email.value.trim(),password:f.password.value});btn.disabled=false;
-  if(error){er.textContent=error.message==='Invalid login credentials'?'That email and password don’t match a GTALHub account.':error.message;er.hidden=false;return}
+  if(error){er.textContent=error.message==='Invalid login credentials'?'That email and password don’t match a GTALHub admin account.':error.message;er.hidden=false;return}
+  if(!await adminCheck()){await AUTH.sb.auth.signOut();er.textContent='Only GTALHub admins can sign in here.';er.hidden=false;return}
   $('#authDlg').close()});
 function liveAgo(){if(!LIVE.d)return'';const m=Math.max(0,Math.round((Date.now()/1000-LIVE.d.synced)/60));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' days ago'}
 /* draws in map units: call inside the translated/scaled context */
@@ -2636,7 +3080,7 @@ function livePal(){let h=`<h2>Server factory</h2>`;
   if(!LIVE.d)return h+`<p class="mstat">${LIVE.err?'Can’t reach the server snapshot yet.':'Loading the latest snapshot…'}</p>`;
   const d=LIVE.d,ct={};LIVE.bl.forEach(b=>ct[b.cat[0]]=(ct[b.cat[0]]||0)+1);
   const row=(k,label,n,sw)=>`<label class="mrow"><input type="checkbox" data-ml="${k}"${MAPF.live[k]?' checked':''}>${sw||''}${label}<span class="ct">${n}</span></label>`;
-  h+=`<p class="mstat">From the Indifferent Broccoli server · synced ${liveAgo()}</p>`+
+  h+=`<p class="mstat">${liveIsSave()?'From your save · saved':'From the Indifferent Broccoli server · synced'} ${liveAgo()}</p>`+
     row('b','Buildings',LIVE.bl.length,`<span class="msw" style="background:${LCAT[LCAT.length-1][2]}"></span>`)+
     `<div class="mlegend">${LCAT.filter(c=>ct[c[0]]).map(c=>`<span><i style="background:${c[2]}"></i>${c[1]}</span>`).join('')}</div>`+
     row('f','Foundations and walls',d.f.length,`<span class="msw" style="background:#3a404c"></span>`)+
@@ -2837,25 +3281,31 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
     chip('data-mf="caves"',MAPF.caves,'Caves','<i class="fic" style="background:rgba(38,24,64,.8);box-shadow:inset 0 0 0 2px #b88cff"></i>')+
     (LIVE.d?chip('data-ml="on"',L.on,'Factory','<i class="fic sq" style="background:#f39c3d"></i>')+
     chip('data-ml="pl"',L.pl,'Pioneers','<i class="fic" style="background:#fff;box-shadow:inset 0 0 0 3px #e8541e"></i>'):'')+`</div>`;
-  if(AUTH.session){
+  /* your own save */
+  if(MYSAVE.busy)h+=`<div class="fsync"><span><b class="fsync-run">${esc(MYSAVE.busy)}</b></span></div>`;
+  else if(liveIsSave())h+=`<div class="fsync"><span>Your save <b>${esc(MYSAVE.name.replace(/\.sav$/i,''))}</b> · saved ${liveAgo()}</span><span><button type="button" class="linkb" data-mysave="load">Load another</button> · <button type="button" class="linkb" data-mysave="clear">Remove</button></span></div>`;
+  else if(AUTH.session&&AUTH.admin){
     if(AUTH.status==='noaccess')h+=`<p class="fsync">Signed in, but this account doesn’t have access to the server map.</p>`;
     else{h+=`<div class="fsync"><span>${LIVE.d?`Server synced ${liveAgo()}`:LIVE.err==='no snapshot yet'?'No server snapshot yet':LIVE.err?'Server snapshot not available right now':'Loading server snapshot…'}${LIVE.running?' · <b class="fsync-run">syncing now…</b>':''}</span>`+
-      `<button type="button" class="linkb" data-lsync${LIVE.running?' disabled':''} title="Pull a fresh snapshot from the server now. Takes about 3 minutes.">${LIVE.running?'Syncing…':'Sync now'}</button></div>`+
+      `<span><button type="button" class="linkb" data-mysave="load" title="Show a save file from this computer instead">Load a save</button> · <button type="button" class="linkb" data-lsync${LIVE.running?' disabled':''} title="Pull a fresh snapshot from the server now. Takes about 3 minutes.">${LIVE.running?'Syncing…':'Sync now'}</button></span></div>`+
       (LIVE.syncMsg?`<p class="fsync-msg">${LIVE.syncMsg}</p>`:'')}}
+  else h+=`<div class="mysave"><button type="button" class="btn primary" data-mysave="load">Load your save file…</button>`+
+    `<p class="fnote">See your own factory on the map: buildings, belts, pipes, power lines and which collectibles you’ve picked up. The file is read right here in your browser and never uploaded. Or drop a .sav file onto the map.</p>`+
+    `<details class="fnote mywhere"><summary>Where are my saves?</summary>On Windows, paste <code>%LOCALAPPDATA%\\FactoryGame\\Saved\\SaveGames</code> into the file window’s address bar, then open the folder with the long number. Each world’s saves end in .sav.</details></div>`;
   /* nodes */
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{cnt[n.r]=(cnt[n.r]||0)+1});const tap=liveTapped();
     let b=`<div class="mchips" role="group" aria-label="Purity">${['Impure','Normal','Pure'].map(p=>`<button type="button" class="mchip" data-mp="${p}" aria-pressed="${MAPF.pur[p]!==false}" style="--pc:${MPC[p]}">${p}</button>`).join('')}</div>`+
       `<div class="fgrid">${Object.keys(cnt).sort(mResSort).map(r=>chip(`data-mr="${escA(r)}" title="${escA(r)} · ${cnt[r]}"`,MAPF.res[r]!==false,esc(r.replace(/ Ore$| Gas$/,'').replace('Raw Quartz','Quartz').replace('Crude Oil','Oil')),fIco(ITEM_CLS[r],MRES[r]||'#888'))).join('')}</div>`+
       `<div class="mlinks"><button type="button" class="linkb" data-mall="1">All</button><button type="button" class="linkb" data-mall="0">None</button></div>`+
-      chk('data-mf="hideTapped"',MAPF.hideTapped,'Hide nodes we’re already mining',tap.size?`<em>${tap.size}</em>`:'')+
+      chk('data-mf="hideTapped"',MAPF.hideTapped,'Hide nodes already being mined',tap.size?`<em>${tap.size}</em>`:'')+
       chk('data-mf="free"',MAPF.free,'Hide nodes this plan uses');
     h+=sec('nodes','Resource nodes',D.nodes.length,b)}
   /* collectibles */
   if(D&&D.cols.length){const ct={},fd={};D.cols.forEach(c=>{ct[c.k]=(ct[c.k]||0)+1;if(isFound(c.id))fd[c.k]=(fd[c.k]||0)+1});
     let b=`<div class="fgrid one">${Object.keys(MCOL).filter(k=>ct[k]).map(k=>chip(`data-mc="${k}"`,MAPF.col[k]!==false,MCOL[k][0],fIco(MCOL[k][2],MCOL[k][1],k.startsWith('slug')?' dia':''),LIVE.d?`${fd[k]||0}/${ct[k]}`:ct[k])).join('')}</div>`+
       `<div class="mlinks"><button type="button" class="linkb" data-mcall="1">All</button><button type="button" class="linkb" data-mcall="0">None</button></div>`+
-      chk('data-mf="showFound"',MAPF.showFound!==false,`Show ones we’ve ${'found'}`,`<em>✓</em>`);
-    if(LIVE.d)b+=`<p class="fnote">Counts are found / total, from the server save.</p>`;
+      chk('data-mf="showFound"',MAPF.showFound!==false,'Show ones already found',`<em>✓</em>`);
+    if(LIVE.d)b+=`<p class="fnote">Counts are found / total, from ${liveIsSave()?'your save':'the server save'}.</p>`;
     h+=sec('cols','Collectibles',D.cols.length,b)}
   /* server factory */
   if(LIVE.d){const d=LIVE.d,ct={};LIVE.bl.forEach(b=>ct[b.cat[0]]=(ct[b.cat[0]]||0)+1);
@@ -2867,11 +3317,11 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
       `<div class="mlinks"><button type="button" class="linkb" data-mlall="1">All</button><button type="button" class="linkb" data-mlall="0">None</button></div>`+
       `<div class="mlegend">${LCAT.filter(c=>ct[c[0]]).map(c=>`<span><i style="background:${c[2]}"></i>${c[1]}</span>`).join('')}</div>`+
       `<div class="lfind"><input id="lfind" type="search" placeholder="Find an item in machines &amp; storage" autocomplete="off" aria-label="Find an item in machines and storage" value="${escA(LFIND?LFIND.q:'')}"><div id="lfindRes">${liveFindHTML()}</div></div>`+
-      `<p class="fnote">From the Indifferent Broccoli server. Hover a building for a quick look, click it for details.</p>`;
-    h+=sec('live','Server factory',null,b)}
+      `<p class="fnote">From ${liveIsSave()?'your save':'the Indifferent Broccoli server'}. Hover a building for a quick look, click it for details.</p>`;
+    h+=sec('live',liveIsSave()?'Your factory':'Server factory',null,b)}
   if(!D)h+='<p class="empty">No map data loaded yet.</p>';
   /* files */
-  if(AUTH.role==='admin'||localPage())h+=sec('files','Map files',null,`<div class="mstat">${mapStatus()}</div><div class="mbtns">`+
+  if(AUTH.admin||localPage())h+=sec('files','Map files',null,`<div class="mstat">${mapStatus()}</div><div class="mbtns">`+
     `<button type="button" class="btn" data-mload="fm" title="Pick the folder of JSON files you exported from FModel">Import FModel export…</button>`+
     `<button type="button" class="btn" data-mload="img">Load map picture…</button>`+
     `<button type="button" class="btn" data-mload="data" title="A map-data file this planner saved earlier">Load map data file…</button>`+
@@ -2894,8 +3344,8 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
       (col&&LIVE.d?`<span>Status</span><b style="color:${srv?'#22b14c':mine?'#3d8bfd':'var(--muted)'}">${fd?(o.k==='pod'?'✓ Looted':'✓ Found')+(mine?' · marked by you':''):(o.k==='pod'?'Not looted yet':'Not found yet')}</b>`:'')+
       `<span>Position</span><span>${m(o.x)}, ${m(o.y)} m · height ${m(o.z)} m</span>`+
       (ORES.includes(o.r)?`<span>Miner output</span><span>${['Mk.1','Mk.2','Mk.3'].map(t=>fmt(EX.miner.tiers[t][0]*PUR[o.p])).join(' / ')} per min at 100%</span>`:'')+`</div>`;
-    if(col&&LIVE.d){h+=srv?`<p class="mstat">The server save shows this one as ${o.k==='pod'?'looted':'found'}.</p>`:
-      `<div class="mbtns"><button type="button" class="btn${mine?'':' primary'}" data-mmine>${mine?'Unmark':'Mark as '+(o.k==='pod'?'looted':'found')}</button></div><p class="mstat">Marks are just for you in this tab. They clear when the next server snapshot comes in, which then shows what’s really been picked up.</p>`}
+    if(col&&LIVE.d){h+=srv?`<p class="mstat">${liveIsSave()?'Your':'The server'} save shows this one as ${o.k==='pod'?'looted':'found'}.</p>`:
+      `<div class="mbtns"><button type="button" class="btn${mine?'':' primary'}" data-mmine>${mine?'Unmark':'Mark as '+(o.k==='pod'?'looted':'found')}</button></div><p class="mstat">Marks are just for you in this tab. ${liveIsSave()?'They clear when you load a newer save.':'They clear when the next server snapshot comes in, which then shows what’s really been picked up.'}</p>`}
     const tb=!col&&liveTapped().get(o.id);if(tb)h+=`<div class="mside-sub">On this node</div><div class="lcard side">${liveCardHTML({b:tb},true)}</div>`;
     const cards=cl[o.id]||[];if(cards.length)h+=`<p class="mstat">Used by ${cards.map(c=>`<button type="button" class="linkb" data-mcard="${c.id}">${cardName(c)}</button>`).join(', ')} in this plan.</p>`;
     const sp=o.r&&mSpec(o);if(sp)h+=`<div class="mbtns"><button type="button" class="btn${cards.length?'':' primary'}" data-madd${sp[2]?'':' disabled title="Not unlocked yet in Game progress"'}>${cards.length?'Add another '+sp[1]:'Add '+sp[1]+' to this plan'}</button></div>`;
@@ -2905,7 +3355,7 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
     if(LIVE.d){const bl=LIVE.bl,ct={},by={};let mw=0,draw=0,sh=0,sl=0,slb=0,sst=0;
       bl.forEach(b=>{ct[b.cat[0]]=(ct[b.cat[0]]||0)+1;const i=b.info;if(i.mw)mw+=i.mw;if(i.pw)draw+=i.pw;if(i.sh)sh+=i.sh;if(i.sl){if(LSLOOP[lKey(b.cls)]){sl+=i.sl;slb++}else sst+=i.sl}
         if((b.cat[0]==='prod'||b.cat[0]==='power'||b.cat[0]==='extract')&&!/PowerSwitch/.test(b.cls)){const n=lBName(b.cls);by[n]=(by[n]||0)+1}});
-      h+=`<p class="mstat">Server factory · synced ${liveAgo()}</p><div class="ov-stats">`+
+      h+=`<p class="mstat">${liveIsSave()?'Your save · saved':'Server factory · synced'} ${liveAgo()}</p><div class="ov-stats">`+
         `<div><b>${Math.round(mw).toLocaleString()}</b><span>MW capacity</span></div><div><b>${Math.round(draw).toLocaleString()}</b><span>MW drawn now</span></div>`+
         `<div><b>${bl.length.toLocaleString()}</b><span>buildings</span></div><div><b>${liveTapped().size}</b><span>nodes mined</span></div></div>`+
         `<div class="mside-sub">Upgrades</div><div class="mkv"><span>Power Shards in use</span><b>${sh}</b><span>Somersloops in use</span><b>${sl} <small>in ${slb} buildings</small></b>${sst?`<span>Somersloops in storage</span><b>${sst}</b>`:''}${LIVE.pl.some(p=>p.sl)?`<span>Somersloops carried</span><b>${LIVE.pl.reduce((a,p)=>a+(p.sl||0),0)}</b>`:''}</div>`+
@@ -2924,6 +3374,7 @@ function mapSideRender(){const D=MAP.data,o=MAP.sel&&mapFind(MAP.sel),cl=mapClai
     h+=`<p class="note">Click a building, node or collectible on the map to see its details here.</p>`}
   $('#mapSide').innerHTML=h}
 function mapEmpty(){const e=$('#mapEmpty');if(MAP.img||MAP.data||MAP.tiles){e.hidden=true;return}e.hidden=false;
+  if(!(AUTH.admin||localPage())){e.innerHTML=`<div class="box"><h2>The map didn’t load</h2><p>Check your connection and reload the page.</p></div>`;return}
   e.innerHTML=`<div class="box"><h2>No map loaded yet</h2><p>The map uses files from your own copy of the game, exported with FModel, the same way as your icons.</p>`+
     `<ol><li><b>Map picture:</b> export the map tiles (Interface › UI › Assets › MapTest › SlicedMap) and pick all four with <em>Load map picture</em>. They are joined into <code>map.png</code>.</li><li><b>Nodes and collectibles:</b> export the level data as JSON, then pick the <code>GameLevel01</code> folder with <em>Import FModel export</em>.</li></ol>`+
     `<p class="mstat">Put <code>map.png</code> and a saved <code>map-data.js</code> in the <code>icons</code> folder next to the planner and they load on their own.</p>`+
@@ -2962,7 +3413,7 @@ async function mapBoot(){let img=null,data=null;try{img=await MDB.get('image');d
   if(data)mapSetData(data,false);else{const d=await mapAutoData();if(d)mapSetData(d,true)}
   if(img)await mapSetImg(img,false).catch(()=>{});
   else if(localPage())for(const f of['map.png','map.jpg','map.webp'])if(await probe('icons/'+f)){await mapSetImg('icons/'+f,true).catch(()=>{});break}
-  mapPalRender();mapSideRender();mapEmpty();authInit();setInterval(()=>{if(!document.hidden)liveLoad()},2*60000)}
+  await mySaveBoot();mapPalRender();mapSideRender();mapEmpty();mapDraw();authInit();setInterval(()=>{if(!document.hidden)liveLoad()},2*60000)}
 const mapReadText=f=>f.text().then(t=>JSON.parse(t.trim().replace(/^window\.FICSIT_MAP_DATA\s*=\s*/,'').replace(/;\s*$/,'')));
 /* FModel "Save Properties (.json)" output: an array of exports, each {Type, Name, Outer, Properties}.
    Actors point at their root component, which holds RelativeLocation; nodes carry mResourceClass and mPurity. */
@@ -3016,6 +3467,11 @@ $('#mapImgIn').addEventListener('change',async e=>{const fs=[...e.target.files];
 $('#mapDataIn').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
   try{const d=await mapReadText(f);if(!mapSetData(d,false))throw 0;try{await MDB.put('data',MAP.data)}catch(x){}flash(`Loaded ${MAP.data.nodes.length} nodes and ${MAP.data.cols.length} collectibles`)}catch(x){flash('That isn’t a map data file from this planner')}});
 $('#mapFmIn').addEventListener('change',e=>{const f=[...e.target.files];e.target.value='';mapImportFM(f)});
+$('#mySaveIn').addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';mySaveLoad(f)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-mysave]');if(!b)return;if(b.dataset.mysave==='load')$('#mySaveIn').click();else mySaveClear()});
+{const mv=$('#mapView'),isSav=e=>[...(e.dataTransfer&&e.dataTransfer.items||[])].some(i=>i.kind==='file');
+  mv.addEventListener('dragover',e=>{if(isSav(e)){e.preventDefault();e.dataTransfer.dropEffect='copy'}});
+  mv.addEventListener('drop',e=>{const f=[...(e.dataTransfer.files||[])].find(f=>/\.sav$/i.test(f.name));if(!f)return;e.preventDefault();mySaveLoad(f)})}
 /* ---- panel events ---- */
 $('#mapPal').addEventListener('toggle',e=>{const s=e.target.closest&&e.target.closest('.fsec');if(s&&e.target===s){MAPF.open[s.dataset.sec]=s.open;mapSave()}},true);
 $('#mapPal').addEventListener('change',e=>{const t=e.target,d=t.dataset;if(MAPF.focus&&(d.mf||d.mc)){MAPF.focus=null;setTimeout(mapSideRender)}if(d.ml){MAPF.live[d.ml]=t.checked;mapSave();if(d.ml==='sloop')mapSideRender();mapDraw();return}
@@ -4238,3 +4694,4 @@ route();
 })();
 </script>
 </body></html>
+<!-- pfm: save upload + admin-only tools v1 -->
