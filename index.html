@@ -559,6 +559,7 @@ body.v-home .work{grid-template-columns:minmax(0,1fr)}
 .htile b{font-family:var(--f-display);font-size:26px;font-weight:600}
 .htile span{color:var(--muted);font-size:13.5px;line-height:1.45}
 .htile em{font-style:normal;font-family:var(--f-mono);font-size:11.5px;margin-top:auto;padding-top:12px}
+.home-credit{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:18px}.home-credit p{color:var(--muted);font-size:12px;margin:0;text-align:center}.kofi{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border:1px solid var(--accent);border-radius:999px;color:var(--accent);text-decoration:none;font-size:13px;font-weight:600}.kofi:hover{background:var(--accent);color:var(--accent-fg)}.kofi svg{width:15px;height:15px;fill:#e5484d}.kofi:hover svg{fill:#fff}.kofib{display:inline-flex;align-items:center;justify-content:center;padding:6px 8px;text-decoration:none;margin-right:6px}.kofib svg{width:16px;height:16px;fill:#e5484d;transition:transform .15s}.kofib:hover svg{transform:scale(1.18)}.hkofi{white-space:nowrap}.hkofi svg{width:12px;height:12px;fill:#e5484d;vertical-align:-1px;margin-right:3px}.hcredit{margin:14px 0 0;padding-top:10px;border-top:1px solid var(--line,rgba(127,127,127,.25));color:var(--muted);font-size:12px}.hcredit a{color:var(--accent)}
 .home-foot{text-align:center;color:var(--muted);font-size:12.5px;margin-top:24px}.home-foot code{font-family:var(--f-mono);font-size:12px}
 @media (prefers-reduced-motion:reduce){.htile{transition:none}.htile:hover{transform:none}}
 .wnav{display:flex;flex-direction:column;overflow:hidden}
@@ -775,7 +776,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
         <button class="btn" id="btnRedo" title="Redo (Ctrl+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button></div>
       <div class="grp sep pmonly"><button class="btn" id="btnIO">Plans</button>
         <button class="btn" id="btnClear">Clear</button></div>
-      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button" hidden>Admin</button><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
+      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button" hidden>Admin</button><a class="btn kofib" href="https://ko-fi.com/preciisiion_ii" target="_blank" rel="noopener" title="Support this project on Ko-fi" aria-label="Support this project on Ko-fi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2 0 3.6 1.1 4.6 2.7h1c1-1.6 2.6-2.7 4.6-2.7 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg></a><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
         <button type="button" class="thsw" id="thSw" role="switch" aria-checked="true" aria-label="Dark mode" title="Switch light / dark"><svg class="ic sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><g stroke-linecap="round"><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g></svg><span class="trk"><span class="knob"></span></span><svg class="ic moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg></button>
         <button class="btn nar" id="tgSum" aria-controls="sum">Totals</button></div>
       <div class="grp sep"><button class="helpb" id="btnHelp" type="button" title="Help (F1)" aria-label="Help">?</button></div>
@@ -825,10 +826,11 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
       <div class="home-hero"><span class="mark">FICSIT</span><h2>Where to, pioneer?</h2><input id="homeQ" type="search" placeholder="Look up an item or building in the wiki" autocomplete="off" aria-label="Search the wiki"></div>
       <div class="home-tiles">
         <a class="htile" href="#/planner"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="4" y="8" width="13" height="10" rx="2"/><rect x="31" y="6" width="13" height="10" rx="2"/><rect x="31" y="32" width="13" height="10" rx="2"/><rect x="4" y="30" width="13" height="10" rx="2"/><path d="M17 13c8 0 6-2 14-2M17 35c8 0 6 2 14 2M17 13c8 0 6 24 14 24"/></svg><b>Planner</b><span>Lay out production lines, balance them, and build whole chains back to raw ore.</span><em id="homeStat-planner"></em></a>
-        <a class="htile" href="#/map"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 11l12-5 14 5 12-5v31l-12 5-14-5-12 5z"/><path d="M17 6v31M31 11v31"/><circle cx="24" cy="22" r="3.5"/></svg><b>Map</b><span>Resource nodes and collectibles from your own game files. Add a miner straight from a node.</span><em id="homeStat-map"></em></a>
+        <a class="htile" href="#/map"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M5 11l12-5 14 5 12-5v31l-12 5-14-5-12 5z"/><path d="M17 6v31M31 11v31"/><circle cx="24" cy="22" r="3.5"/></svg><b>Map</b><span>Every resource node and collectible. Load your save to see your own factory and what you’ve collected.</span><em id="homeStat-map"></em></a>
         <a class="htile" href="#/wiki"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 8h12a5 5 0 0 1 4 2 5 5 0 0 1 4-2h12v30H28a4 4 0 0 0-4 3 4 4 0 0 0-4-3H8z"/><path d="M24 10v31"/></svg><b>Wiki</b><span>Every item, building, recipe and unlock, linked to the planner and the map.</span><em id="homeStat-wiki"></em></a>
       </div>
       <p class="home-foot">To open a section directly, add <code>#/planner</code>, <code>#/map</code> or <code>#/wiki</code> to the end of the planner’s address, for example on a Stream Deck button.</p>
+      <div class="home-credit"><a class="kofi" href="https://ko-fi.com/preciisiion_ii" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2 0 3.6 1.1 4.6 2.7h1c1-1.6 2.6-2.7 4.6-2.7 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>Support this project on Ko-fi</a><p>Free to use, fan-made, and not affiliated with or endorsed by Coffee Stain Studios, the makers of Satisfactory.</p></div>
     </div></section>
   </main>
 </div>
@@ -967,6 +969,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
       <p class="hnote">On a Mac, use ⌘ instead of Ctrl.</p>
     </section>
     <section data-hp="new" hidden><div class="chlog" id="chlog"></div></section>
+    <p class="hcredit">Pioneer’s Field Manual is free and fan-made, and not affiliated with or endorsed by Coffee Stain Studios. If it helps your factory, you can <a class="hkofi" href="https://ko-fi.com/preciisiion_ii" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2 0 3.6 1.1 4.6 2.7h1c1-1.6 2.6-2.7 4.6-2.7 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>support it on Ko-fi</a>.</p>
   </div>
 </div>
 <div id="rcMenu" class="spmenu" role="menu" hidden></div>
@@ -4700,4 +4703,4 @@ route();
 })();
 </script>
 </body></html>
-<!-- pfm: public cleanup v2 -->
+<!-- pfm: ko-fi + fan-made notice v3 -->
