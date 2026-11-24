@@ -490,7 +490,7 @@ button.ov-prog:hover{background:var(--panel-2)}button.ov-prog.on{border-color:va
 .mpal{padding:4px 14px 16px}
 .flayers{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:10px 0 4px}
 .flayers .fchip{font-size:11.5px;padding:4px 5px;gap:5px}
-.mysave{margin:2px 0 8px}.mysave .btn{width:100%}.mysave .fnote{margin:6px 0 0}.mywhere summary{cursor:pointer;color:var(--accent)}.mywhere code{font-size:11px;word-break:break-all}
+.gmnote{font-size:12px;color:var(--muted);margin:6px 0 0}.gmnote[hidden]{display:none}.mysave{margin:2px 0 8px}.mysave .btn{width:100%}.mysave .fnote{margin:6px 0 0}.mywhere summary{cursor:pointer;color:var(--accent)}.mywhere code{font-size:11px;word-break:break-all}
 .fsync{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--muted);margin:2px 0 6px}.fsync .linkb{font-size:11.5px;white-space:nowrap}.fsync-run{color:var(--accent);font-weight:600}.fsync .linkb:disabled{opacity:.6;cursor:default}.fsync-msg{font-size:11.5px;margin:-2px 0 6px;color:var(--fg)}
 .mnew{position:absolute;z-index:9;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--accent);border-radius:999px;box-shadow:var(--shadow);padding:5px 6px 5px 14px;font-size:12.5px;white-space:nowrap}
 .mnew button{border:0;border-radius:999px;background:var(--accent);color:#fff;font:inherit;font-weight:600;padding:4px 12px;cursor:pointer}
@@ -838,7 +838,18 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
 <div id="settings" hidden>
   <div class="box" role="dialog" aria-labelledby="sTitle">
     <h2 id="sTitle">Game progress</h2>
+    <p class="gmnote" id="unlFrom" hidden></p>
     <p>The planner only uses what you have. Locked buildings disappear from the recipe list and Build chain won't add them. Wires that need a faster belt or pipe than you have show how many to run side by side. Update this as you progress through the tiers.</p>
+    <h3>Game mode</h3>
+    <p>The Game Modes you picked when you started this world. Loading your save on the map fills these in for you.</p>
+    <div class="sgrid gmgrid">
+      <label class="f">Recipe parts cost<select id="gmCost"><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="0.75">×0.75</option><option value="1">×1 (default)</option><option value="1.25">×1.25</option><option value="1.5">×1.5</option><option value="1.75">×1.75</option><option value="2">×2</option></select></label>
+      <label class="f">Power consumption<select id="gmPower"><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="0.75">×0.75</option><option value="1">×1 (default)</option><option value="2">×2</option><option value="5">×5</option></select></label>
+      <label class="f">Space Elevator cost<select id="gmSpace"><option value="0.25">×0.25</option><option value="0.5">×0.5</option><option value="0.75">×0.75</option><option value="1">×1 (default)</option><option value="2">×2</option><option value="5">×5</option><option value="10">×10</option><option value="25">×25</option><option value="50">×50</option><option value="100">×100</option></select></label>
+      <label class="f">Resource node layout<select id="gmRand"><option value="def">Default</option><option value="random">Random</option><option value="basic">Basic Resource Rich</option><option value="adv">Advanced Resource Rich</option><option value="fossil">Fossil Fuel Rich</option></select></label>
+      <label class="f">Resource node purity<select id="gmPur"><option value="def">Default</option><option value="allpure">All Pure</option><option value="up">Mostly Pure</option><option value="avg">Average</option><option value="down">Mostly Impure</option><option value="allimpure">All Impure</option><option value="random">Random</option></select></label>
+    </div>
+    <p class="gmnote" id="gmNote"></p>
     <h3>Logistics</h3>
     <div class="sgrid">
       <label class="f">Fastest conveyor belt<select id="uBelt"></select></label>
@@ -1024,6 +1035,17 @@ const SLOTS={Smelter:1,Constructor:1,Assembler:2,Foundry:2,Refinery:2,Converter:
 const LOCKABLE=['Foundry','Assembler','Manufacturer','Refinery','Packager','Blender','Particle Accelerator','Converter','Quantum Encoder'];
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-');
 const RECIPES=RECIPE_DATA.map(([id,name,bld,alt,i,o,pw])=>({id,name,bld,alt:!!alt,in:i,out:o,pw}));
+/* ---- Game Modes (1.2): multipliers picked when a world is started. Recipe inputs are rounded per cycle to whole items
+   (fluids to whole liters), like the game, so each recipe keeps its cycle time here (seconds, from the game's Docs file). ---- */
+const RCYC={"caterium-ingot":4,"copper-ingot":2,"iron-ingot":2,"alternate-pure-aluminum-ingot":2,"alien-dna-capsule":6,"aluminum-casing":2,"biomass-alien-protein":4,"biomass-leaves":5,"biomass-mycelia":4,"biomass-wood":4,"cable":2,"concrete":4,"copper-powder":6,"copper-sheet":6,"empty-canister":4,"empty-fluid-tank":1,"ficsite-trigon":6,"hatcher-protein":3,"hog-protein":3,"iron-plate":6,"iron-rebar":4,"iron-rod":4,"power-shard-1":8,"power-shard-2":12,"power-shard-5":24,"quartz-crystal":8,"quickwire":5,"reanimated-sam":2,"screw":6,"silica":8,"solid-biofuel":4,"spitter-protein":3,"steel-beam":4,"steel-pipe":6,"stinger-protein":3,"wire":4,"alternate-aluminum-beam":8,"alternate-aluminum-rod":8,"alternate-biocoal":8,"alternate-cast-screw":24,"alternate-caterium-wire":4,"alternate-charcoal":4,"alternate-iron-pipe":12,"alternate-iron-wire":24,"alternate-steel-canister":6,"alternate-steel-rod":5,"alternate-steel-screw":12,"ai-limiter":12,"alclad-aluminum-sheet":6,"assembly-director-system":80,"automated-wiring":24,"black-powder":4,"circuit-board":8,"cluster-nobelisk":24,"electromagnetic-control-rod":30,"encased-industrial-beam":10,"encased-plutonium-cell":12,"fabric":4,"gas-nobelisk":12,"heat-sink":8,"homing-rifle-ammo":24,"magnetic-field-generator":120,"modular-frame":60,"motor":12,"nobelisk":6,"pressure-conversion-cube":60,"pulse-nobelisk":60,"reinforced-iron-plate":12,"rifle-ammo":12,"rotor":15,"shatter-rebar":12,"smart-plating":30,"stator":12,"stun-rebar":6,"versatile-framework":24,"alternate-adhered-iron-plate":16,"alternate-alclad-casing":8,"alternate-automated-miner":60,"alternate-bolted-frame":24,"alternate-bolted-iron-plate":12,"alternate-caterium-circuit-board":48,"alternate-cheap-silica":8,"alternate-coated-iron-canister":4,"alternate-coated-iron-plate":8,"alternate-compacted-coal":12,"alternate-copper-rotor":16,"alternate-crystal-computer":36,"alternate-electric-motor":16,"alternate-electrode-circuit-board":12,"alternate-electromagnetic-connection-rod":15,"alternate-encased-industrial-pipe":15,"alternate-fine-black-powder":8,"alternate-fine-concrete":12,"alternate-fused-quickwire":8,"alternate-fused-wire":20,"alternate-heat-exchanger":6,"alternate-insulated-cable":12,"alternate-oc-supercomputer":20,"alternate-plastic-ai-limiter":15,"alternate-plutonium-fuel-unit":120,"alternate-quickwire-cable":24,"alternate-quickwire-stator":15,"alternate-rubber-concrete":6,"alternate-silicon-circuit-board":24,"alternate-steel-rotor":12,"alternate-steeled-frame":60,"alternate-stitched-iron-plate":32,"aluminum-ingot":4,"steel-ingot":4,"alternate-basic-iron-ingot":12,"alternate-coke-steel-ingot":12,"alternate-compacted-steel-ingot":24,"alternate-copper-alloy-ingot":6,"alternate-fused-quartz-crystal":20,"alternate-iron-alloy-ingot":12,"alternate-molded-beam":12,"alternate-molded-steel-pipe":6,"alternate-solid-steel-ingot":3,"alternate-steel-cast-plate":4,"alternate-tempered-caterium-ingot":8,"alternate-tempered-copper-ingot":12,"adaptive-control-unit":60,"ballistic-warp-drive":60,"computer":24,"crystal-oscillator":120,"explosive-rebar":12,"gas-filter":8,"heavy-modular-frame":30,"high-speed-connector":16,"iodine-infused-filter":16,"modular-engine":60,"nuke-nobelisk":120,"plutonium-fuel-rod":240,"radio-control-unit":48,"sam-fluctuator":6,"singularity-cell":60,"supercomputer":32,"thermal-propulsion-rocket":120,"turbo-motor":32,"turbo-rifle-ammo":12,"uranium-fuel-rod":150,"alternate-automated-speed-wiring":32,"alternate-caterium-computer":16,"alternate-classic-battery":8,"alternate-flexible-framework":16,"alternate-heavy-encased-frame":64,"alternate-heavy-flexible-frame":16,"alternate-infused-uranium-cell":12,"alternate-insulated-crystal-oscillator":32,"alternate-plastic-smart-plating":24,"alternate-radio-connection-unit":16,"alternate-radio-control-system":40,"alternate-rigor-motor":48,"alternate-silicon-high-speed-connector":40,"alternate-super-state-computer":25,"alternate-turbo-electric-motor":64,"alternate-turbo-pressure-motor":32,"alternate-uranium-fuel-unit":300,"alumina-solution":6,"aluminum-scrap":1,"fuel":6,"ionized-fuel":24,"liquid-biofuel":4,"petroleum-coke":6,"plastic":6,"residual-fuel":6,"residual-plastic":6,"residual-rubber":6,"rubber":6,"smokeless-powder":6,"sulfuric-acid":6,"alternate-coated-cable":8,"alternate-diluted-packaged-fuel":2,"alternate-electrode-aluminum-scrap":4,"alternate-heavy-oil-residue":6,"alternate-leached-caterium-ingot":10,"alternate-leached-copper-ingot":12,"alternate-leached-iron-ingot":6,"alternate-polyester-fabric":2,"alternate-polymer-resin":6,"alternate-pure-caterium-ingot":5,"alternate-pure-copper-ingot":24,"alternate-pure-iron-ingot":12,"alternate-pure-quartz-crystal":8,"alternate-quartz-purification":12,"alternate-recycled-plastic":12,"alternate-recycled-rubber":12,"alternate-sloppy-alumina":3,"alternate-steamed-copper-sheet":8,"alternate-turbo-heavy-fuel":8,"alternate-wet-concrete":3,"turbofuel":16,"packaged-alumina-solution":1,"packaged-fuel":3,"packaged-heavy-oil-residue":4,"packaged-ionized-fuel":3,"packaged-liquid-biofuel":3,"packaged-nitric-acid":2,"packaged-nitrogen-gas":1,"packaged-oil":4,"packaged-rocket-fuel":1,"packaged-sulfuric-acid":3,"packaged-turbofuel":6,"packaged-water":2,"unpackage-alumina-solution":1,"unpackage-fuel":2,"unpackage-heavy-oil-residue":6,"unpackage-ionized-fuel":3,"unpackage-liquid-biofuel":2,"unpackage-nitric-acid":3,"unpackage-nitrogen-gas":1,"unpackage-oil":2,"unpackage-rocket-fuel":1,"unpackage-sulfuric-acid":1,"unpackage-turbofuel":6,"unpackage-water":1,"battery":3,"biochemical-sculptor":120,"cooling-system":10,"encased-uranium-cell":12,"fused-modular-frame":40,"nitric-acid":6,"non-fissile-uranium":24,"rocket-fuel":6,"turbo-rifle-ammo-blender":12,"alternate-cooling-device":24,"alternate-diluted-fuel":6,"alternate-distilled-silica":6,"alternate-fertile-uranium":12,"alternate-heat-fused-frame":20,"alternate-instant-scrap":6,"alternate-nitro-rocket-fuel":2.4,"alternate-turbo-blend-fuel":8,"dark-matter-crystal":2,"diamonds":2,"ficsonium":6,"nuclear-pasta":120,"plutonium-pellet":60,"alternate-cloudy-diamonds":3,"alternate-dark-matter-crystallization":3,"alternate-dark-matter-trap":2,"alternate-instant-plutonium-cell":120,"alternate-oil-based-diamonds":3,"alternate-petroleum-diamonds":2,"alternate-turbo-diamonds":3,"bauxite-caterium":6,"bauxite-copper":6,"caterium-ore-copper":6,"caterium-ore-quartz":6,"coal-iron":6,"coal-limestone":6,"copper-ore-quartz":6,"copper-ore-sulfur":6,"dark-matter-residue":6,"excited-photonic-matter":3,"ficsite-ingot-aluminum":2,"ficsite-ingot-caterium":4,"ficsite-ingot-iron":6,"iron-ore-limestone":6,"limestone-sulfur":6,"nitrogen-gas-bauxite":6,"nitrogen-gas-caterium":6,"raw-quartz-bauxite":6,"raw-quartz-coal":6,"sulfur-coal":6,"sulfur-iron":6,"time-crystal":10,"uranium-ore-bauxite":6,"alternate-dark-ion-fuel":3,"alternate-pink-diamonds":4,"ai-expansion-server":15,"alien-power-matrix":24,"ficsonium-fuel-rod":24,"neural-quantum-processor":20,"superposition-oscillator":12,"synthetic-power-shard":12};
+const RCLS={"caterium-ingot":"IngotCaterium","copper-ingot":"IngotCopper","iron-ingot":"IngotIron","alternate-pure-aluminum-ingot":"PureAluminumIngot","alien-dna-capsule":"AlienDNACapsule","aluminum-casing":"AluminumCasing","biomass-alien-protein":"Biomass_AlienProtein","biomass-leaves":"Biomass_Leaves","biomass-mycelia":"Biomass_Mycelia","biomass-wood":"Biomass_Wood","cable":"Cable","concrete":"Concrete","copper-powder":"CopperDust","copper-sheet":"CopperSheet","empty-canister":"FluidCanister","empty-fluid-tank":"GasTank","ficsite-trigon":"FicsiteMesh","hatcher-protein":"Protein_Crab","hog-protein":"Protein_Hog","iron-plate":"IronPlate","iron-rebar":"SpikedRebar","iron-rod":"IronRod","power-shard-1":"PowerCrystalShard_1","power-shard-2":"PowerCrystalShard_2","power-shard-5":"PowerCrystalShard_3","quartz-crystal":"QuartzCrystal","quickwire":"Quickwire","reanimated-sam":"IngotSAM","screw":"Screw","silica":"Silica","solid-biofuel":"Biofuel","spitter-protein":"Protein_Spitter","steel-beam":"SteelBeam","steel-pipe":"SteelPipe","stinger-protein":"Protein_Stinger","wire":"Wire","alternate-aluminum-beam":"Alternate_SteelBeam_Aluminum","alternate-aluminum-rod":"Alternate_AluminumRod","alternate-biocoal":"Alternate_Coal_2","alternate-cast-screw":"Alternate_Screw","alternate-caterium-wire":"Alternate_Wire_2","alternate-charcoal":"Alternate_Coal_1","alternate-iron-pipe":"Alternate_SteelPipe_Iron","alternate-iron-wire":"Alternate_Wire_1","alternate-steel-canister":"Alternate_SteelCanister","alternate-steel-rod":"Alternate_SteelRod","alternate-steel-screw":"Alternate_Screw_2","ai-limiter":"AILimiter","alclad-aluminum-sheet":"AluminumSheet","assembly-director-system":"SpaceElevatorPart_7","automated-wiring":"SpaceElevatorPart_3","black-powder":"Gunpowder","circuit-board":"CircuitBoard","cluster-nobelisk":"NobeliskCluster","electromagnetic-control-rod":"ElectromagneticControlRod","encased-industrial-beam":"EncasedIndustrialBeam","encased-plutonium-cell":"PlutoniumCell","fabric":"Fabric","gas-nobelisk":"NobeliskGas","heat-sink":"HeatSink","homing-rifle-ammo":"CartridgeSmart","magnetic-field-generator":"SpaceElevatorPart_6","modular-frame":"ModularFrame","motor":"Motor","nobelisk":"Nobelisk","pressure-conversion-cube":"PressureConversionCube","pulse-nobelisk":"NobeliskShockwave","reinforced-iron-plate":"IronPlateReinforced","rifle-ammo":"Cartridge","rotor":"Rotor","shatter-rebar":"Rebar_Spreadshot","smart-plating":"SpaceElevatorPart_1","stator":"Stator","stun-rebar":"Rebar_Stunshot","versatile-framework":"SpaceElevatorPart_2","alternate-adhered-iron-plate":"Alternate_AdheredIronPlate","alternate-alclad-casing":"Alternate_AlcladCasing","alternate-automated-miner":"Alternate_AutomatedMiner","alternate-bolted-frame":"Alternate_BoltedFrame","alternate-bolted-iron-plate":"Alternate_ReinforcedIronPlate_1","alternate-caterium-circuit-board":"Alternate_CircuitBoard_2","alternate-cheap-silica":"Alternate_Silica","alternate-coated-iron-canister":"Alternate_CoatedIronCanister","alternate-coated-iron-plate":"Alternate_CoatedIronPlate","alternate-compacted-coal":"Alternate_EnrichedCoal","alternate-copper-rotor":"Alternate_CopperRotor","alternate-crystal-computer":"Alternate_Computer_2","alternate-electric-motor":"Alternate_ElectricMotor","alternate-electrode-circuit-board":"Alternate_ElectrodeCircuitBoard","alternate-electromagnetic-connection-rod":"Alternate_ElectromagneticControlRod_1","alternate-encased-industrial-pipe":"Alternate_EncasedIndustrialBeam","alternate-fine-black-powder":"Alternate_Gunpowder_1","alternate-fine-concrete":"Alternate_Concrete","alternate-fused-quickwire":"Alternate_Quickwire","alternate-fused-wire":"Alternate_FusedWire","alternate-heat-exchanger":"Alternate_HeatSink_1","alternate-insulated-cable":"Alternate_Cable_1","alternate-oc-supercomputer":"Alternate_OCSupercomputer","alternate-plastic-ai-limiter":"Alternate_AILimiter_Plastic","alternate-plutonium-fuel-unit":"Alternate_PlutoniumFuelUnit","alternate-quickwire-cable":"Alternate_Cable_2","alternate-quickwire-stator":"Alternate_Stator","alternate-rubber-concrete":"Alternate_RubberConcrete","alternate-silicon-circuit-board":"Alternate_CircuitBoard_1","alternate-steel-rotor":"Alternate_Rotor","alternate-steeled-frame":"Alternate_ModularFrame","alternate-stitched-iron-plate":"Alternate_ReinforcedIronPlate_2","aluminum-ingot":"IngotAluminum","steel-ingot":"IngotSteel","alternate-basic-iron-ingot":"Alternate_IronIngot_Basic","alternate-coke-steel-ingot":"Alternate_CokeSteelIngot","alternate-compacted-steel-ingot":"Alternate_IngotSteel_2","alternate-copper-alloy-ingot":"Alternate_CopperAlloyIngot","alternate-fused-quartz-crystal":"Alternate_Quartz_Fused","alternate-iron-alloy-ingot":"Alternate_IngotIron","alternate-molded-beam":"Alternate_SteelBeam_Molded","alternate-molded-steel-pipe":"Alternate_SteelPipe_Molded","alternate-solid-steel-ingot":"Alternate_IngotSteel_1","alternate-steel-cast-plate":"Alternate_SteelCastedPlate","alternate-tempered-caterium-ingot":"Alternate_CateriumIngot_Tempered","alternate-tempered-copper-ingot":"Alternate_CopperIngot_Tempered","adaptive-control-unit":"SpaceElevatorPart_5","ballistic-warp-drive":"SpaceElevatorPart_11","computer":"Computer","crystal-oscillator":"CrystalOscillator","explosive-rebar":"Rebar_Explosive","gas-filter":"FilterGasMask","heavy-modular-frame":"ModularFrameHeavy","high-speed-connector":"HighSpeedConnector","iodine-infused-filter":"FilterHazmat","modular-engine":"SpaceElevatorPart_4","nuke-nobelisk":"NobeliskNuke","plutonium-fuel-rod":"PlutoniumFuelRod","radio-control-unit":"RadioControlUnit","sam-fluctuator":"SAMFluctuator","singularity-cell":"SingularityCell","supercomputer":"ComputerSuper","thermal-propulsion-rocket":"SpaceElevatorPart_8","turbo-motor":"MotorTurbo","turbo-rifle-ammo":"CartridgeChaos_Packaged","uranium-fuel-rod":"NuclearFuelRod","alternate-automated-speed-wiring":"Alternate_HighSpeedWiring","alternate-caterium-computer":"Alternate_Computer_1","alternate-classic-battery":"Alternate_ClassicBattery","alternate-flexible-framework":"Alternate_FlexibleFramework","alternate-heavy-encased-frame":"Alternate_ModularFrameHeavy","alternate-heavy-flexible-frame":"Alternate_HeavyFlexibleFrame","alternate-infused-uranium-cell":"Alternate_UraniumCell_1","alternate-insulated-crystal-oscillator":"Alternate_CrystalOscillator","alternate-plastic-smart-plating":"Alternate_PlasticSmartPlating","alternate-radio-connection-unit":"Alternate_RadioControlUnit_1","alternate-radio-control-system":"Alternate_RadioControlSystem","alternate-rigor-motor":"Alternate_Motor_1","alternate-silicon-high-speed-connector":"Alternate_HighSpeedConnector","alternate-super-state-computer":"Alternate_SuperStateComputer","alternate-turbo-electric-motor":"Alternate_TurboMotor_1","alternate-turbo-pressure-motor":"Alternate_TurboPressureMotor","alternate-uranium-fuel-unit":"Alternate_NuclearFuelRod_1","alumina-solution":"AluminaSolution","aluminum-scrap":"AluminumScrap","fuel":"LiquidFuel","ionized-fuel":"IonizedFuel","liquid-biofuel":"LiquidBiofuel","petroleum-coke":"PetroleumCoke","plastic":"Plastic","residual-fuel":"ResidualFuel","residual-plastic":"ResidualPlastic","residual-rubber":"ResidualRubber","rubber":"Rubber","smokeless-powder":"GunpowderMK2","sulfuric-acid":"SulfuricAcid","alternate-coated-cable":"Alternate_CoatedCable","alternate-diluted-packaged-fuel":"Alternate_DilutedPackagedFuel","alternate-electrode-aluminum-scrap":"Alternate_ElectroAluminumScrap","alternate-heavy-oil-residue":"Alternate_HeavyOilResidue","alternate-leached-caterium-ingot":"Alternate_CateriumIngot_Leached","alternate-leached-copper-ingot":"Alternate_CopperIngot_Leached","alternate-leached-iron-ingot":"Alternate_IronIngot_Leached","alternate-polyester-fabric":"Alternate_PolyesterFabric","alternate-polymer-resin":"Alternate_PolymerResin","alternate-pure-caterium-ingot":"Alternate_PureCateriumIngot","alternate-pure-copper-ingot":"Alternate_PureCopperIngot","alternate-pure-iron-ingot":"Alternate_PureIronIngot","alternate-pure-quartz-crystal":"Alternate_PureQuartzCrystal","alternate-quartz-purification":"Alternate_Quartz_Purified","alternate-recycled-plastic":"Alternate_Plastic_1","alternate-recycled-rubber":"Alternate_RecycledRubber","alternate-sloppy-alumina":"Alternate_SloppyAlumina","alternate-steamed-copper-sheet":"Alternate_SteamedCopperSheet","alternate-turbo-heavy-fuel":"Alternate_TurboHeavyFuel","alternate-wet-concrete":"Alternate_WetConcrete","turbofuel":"Alternate_Turbofuel","packaged-alumina-solution":"PackagedAlumina","packaged-fuel":"Fuel","packaged-heavy-oil-residue":"PackagedOilResidue","packaged-ionized-fuel":"PackagedIonizedFuel","packaged-liquid-biofuel":"PackagedBiofuel","packaged-nitric-acid":"PackagedNitricAcid","packaged-nitrogen-gas":"PackagedNitrogen","packaged-oil":"PackagedCrudeOil","packaged-rocket-fuel":"PackagedRocketFuel","packaged-sulfuric-acid":"PackagedSulfuricAcid","packaged-turbofuel":"PackagedTurboFuel","packaged-water":"PackagedWater","unpackage-alumina-solution":"UnpackageAlumina","unpackage-fuel":"UnpackageFuel","unpackage-heavy-oil-residue":"UnpackageOilResidue","unpackage-ionized-fuel":"UnpackageIonizedFuel","unpackage-liquid-biofuel":"UnpackageBioFuel","unpackage-nitric-acid":"UnpackageNitricAcid","unpackage-nitrogen-gas":"UnpackageNitrogen","unpackage-oil":"UnpackageOil","unpackage-rocket-fuel":"UnpackageRocketFuel","unpackage-sulfuric-acid":"UnpackageSulfuricAcid","unpackage-turbofuel":"UnpackageTurboFuel","unpackage-water":"UnpackageWater","battery":"Battery","biochemical-sculptor":"SpaceElevatorPart_10","cooling-system":"CoolingSystem","encased-uranium-cell":"UraniumCell","fused-modular-frame":"FusedModularFrame","nitric-acid":"NitricAcid","non-fissile-uranium":"NonFissileUranium","rocket-fuel":"RocketFuel","turbo-rifle-ammo-blender":"CartridgeChaos","alternate-cooling-device":"Alternate_CoolingDevice","alternate-diluted-fuel":"Alternate_DilutedFuel","alternate-distilled-silica":"Alternate_Silica_Distilled","alternate-fertile-uranium":"Alternate_FertileUranium","alternate-heat-fused-frame":"Alternate_HeatFusedFrame","alternate-instant-scrap":"Alternate_InstantScrap","alternate-nitro-rocket-fuel":"Alternate_RocketFuel_Nitro","alternate-turbo-blend-fuel":"Alternate_TurboBlendFuel","dark-matter-crystal":"DarkMatter","diamonds":"Diamond","ficsonium":"Ficsonium","nuclear-pasta":"SpaceElevatorPart_9","plutonium-pellet":"Plutonium","alternate-cloudy-diamonds":"Alternate_Diamond_Cloudy","alternate-dark-matter-crystallization":"Alternate_DarkMatter_Crystallization","alternate-dark-matter-trap":"Alternate_DarkMatter_Trap","alternate-instant-plutonium-cell":"Alternate_InstantPlutoniumCell","alternate-oil-based-diamonds":"Alternate_Diamond_OilBased","alternate-petroleum-diamonds":"Alternate_Diamond_Petroleum","alternate-turbo-diamonds":"Alternate_Diamond_Turbo","bauxite-caterium":"Bauxite_Caterium","bauxite-copper":"Bauxite_Copper","caterium-ore-copper":"Caterium_Copper","caterium-ore-quartz":"Caterium_Quartz","coal-iron":"Coal_Iron","coal-limestone":"Coal_Limestone","copper-ore-quartz":"Copper_Quartz","copper-ore-sulfur":"Copper_Sulfur","dark-matter-residue":"DarkEnergy","excited-photonic-matter":"QuantumEnergy","ficsite-ingot-aluminum":"FicsiteIngot_AL","ficsite-ingot-caterium":"FicsiteIngot_CAT","ficsite-ingot-iron":"FicsiteIngot_Iron","iron-ore-limestone":"Iron_Limestone","limestone-sulfur":"Limestone_Sulfur","nitrogen-gas-bauxite":"Nitrogen_Bauxite","nitrogen-gas-caterium":"Nitrogen_Caterium","raw-quartz-bauxite":"Quartz_Bauxite","raw-quartz-coal":"Quartz_Coal","sulfur-coal":"Sulfur_Coal","sulfur-iron":"Sulfur_Iron","time-crystal":"TimeCrystal","uranium-ore-bauxite":"Uranium_Bauxite","alternate-dark-ion-fuel":"Alternate_IonizedFuel_Dark","alternate-pink-diamonds":"Alternate_Diamond_Pink","ai-expansion-server":"SpaceElevatorPart_12","alien-power-matrix":"AlienPowerFuel","ficsonium-fuel-rod":"FicsoniumFuelRod","neural-quantum-processor":"TemporalProcessor","superposition-oscillator":"SuperpositionOscillator","synthetic-power-shard":"SyntheticPowerShard"}; /* planner recipe id -> the game's recipe class, for reading unlocks from a save */
+const GM_DEF={cost:1,power:1,space:1,rand:'def',pur:'def',seed:null,from:''};
+let GM={...GM_DEF};try{const g=JSON.parse(localStorage.getItem('pfm-gamemode')||'null');if(g)GM={...GM_DEF,...g}}catch(e){}
+const gmRound=x=>Math.max(1,Math.round(+x.toFixed(6)));
+RECIPES.forEach(r=>r.in0=r.in.map(x=>[...x]));
+function gmRecipes(){const m=+GM.cost||1;RECIPES.forEach(r=>{const T=RCYC[r.id];
+  r.in=r.in0.map(([it,rate])=>{if(m===1)return[it,rate];if(!T)return[it,rate*m];const u=FLUIDS.has(it)||it==='Water'?1000:1,per=Math.round(rate*T/60*u);return[it,gmRound(per*m)/u*60/T]})})}
+gmRecipes();
 const RMAP=Object.fromEntries(RECIPES.map(r=>[r.id,r]));
 const ALTS=RECIPES.filter(r=>r.alt).sort((a,b)=>a.out[0][0].localeCompare(b.out[0][0])||a.name.localeCompare(b.name));
 const EX={
@@ -1139,7 +1161,8 @@ function ports(n){
   if(n.kind==='supply'){const r=Math.max(0,+n.rate||0);return{ins:[],outs:[{item:n.item,unit:r,rate:r}]}}
   return{ins:[{item:n.item,unit:0,rate:Math.max(0,+n.rate||0)}],outs:[]};
 }
-function power(n){
+function power(n){const p=powerBase(n);return n.kind==='recipe'||n.kind==='extract'?p*(+GM.power||1):p}
+function powerBase(n){
   const {m,clk}=plan(n);const f=m*Math.pow(clk/100,1.321928);
   if(n.kind==='recipe'){const a=amp(n),r=RMAP[n.recipe];return (r.pw??BLD[r.bld])*f*a*a}
   if(n.kind==='extract'){const c=clk*(n._u??1);return EX[n.ex].tiers[n.tier][1]*m*Math.pow(c/100,1.321928)+(n.ex==='well'&&m>0?150:0)}
@@ -2838,6 +2861,28 @@ async function pfmParseSave(input, progress) {
     blds.push(rec);
   }
 
+  /* ---- game mode (1.2) and the resource nodes it changed: only in saves started with Game Modes ---- */
+  let gm = null; const nodes = [];
+  let unl = null;
+  for (let i = 0; i < hs.length; i++) {
+    const h = hs[i];
+    if (h.cls.endsWith('BP_GameState_C')) {
+      const pr = P(i), num = k => isNum(pr[k]) ? pr[k] : undefined, en = k => typeof pr[k] === 'string' ? pr[k].split('::').pop() : undefined;
+      const g = { cost: num('mPartsCostMultiplier'), power: num('mEnergyCostMultiplier'), space: num('mSpacePartsCostMultiplier'),
+        rand: en('mNodeRandomization'), pur: en('mNodePuritySettings'), seed: num('mNodeRandomizationSeed') };
+      if (Object.values(g).some(v => v !== undefined)) gm = g;
+    } else if (/\.RecipeManager$|\.unlockSubsystem$/.test(h.inst)) {
+      const pr = P(i); unl = unl || {};
+      if (Array.isArray(pr.mAvailableRecipes)) unl.recipes = pr.mAvailableRecipes.filter(isRef).map(x => short(x.ref).replace(/^Recipe_/, '').replace(/_C$/, ''));
+      if ('mIsBuildingOverclockUnlocked' in pr) unl.overclock = !!pr.mIsBuildingOverclockUnlocked;
+      if ('mIsBuildingProductionBoostUnlocked' in pr) unl.boost = !!pr.mIsBuildingProductionBoostUnlocked;
+    } else if (/BP_ResourceNode_C$|BP_FrackingSatellite_C$|BP_FrackingCore_C$/.test(h.cls)) {
+      const pr = P(i), rc = isRef(pr.mResourceClassOverride) ? short(pr.mResourceClassOverride.ref) : '';
+      const pu = typeof pr.mPurityOverride === 'string' ? pr.mPurityOverride.replace(/^.*RP_/, '').replace('Inpure', 'Impure') : '';
+      if (rc || pu) nodes.push([h.inst.split('.').pop(), rc, pu]);
+    }
+  }
+
   /* ---- lightweight buildables (foundations, walls, ramps ...) ---- */
   say('Reading foundations', 0.82);
   const found = [];
@@ -2917,9 +2962,12 @@ async function pfmParseSave(input, progress) {
   } catch (e) { got = []; }
 
   say('Done', 1);
-  return { v: 1, synced: Math.floor(Date.now() / 1000), cls: classes, b: blds, f: found, found: got, belts, pipes, tubes, wires, players };
+  const res = { v: 1, synced: Math.floor(Date.now() / 1000), cls: classes, b: blds, f: found, found: got, belts, pipes, tubes, wires, players };
+  if (gm) res.gm = gm;
+  if (unl && unl.recipes) res.unl = unl;
+  if (nodes.length) res.nodes = nodes;
+  return res;
 }
-
 /* ---- your own save: read in the browser (in a Web Worker) and kept in this browser only, never uploaded ---- */
 const MYSAVE={name:'',busy:''};
 function saveParse(buf){
@@ -2935,13 +2983,14 @@ async function mySaveLoad(f){if(!f)return;if(!/\.sav$/i.test(f.name)){flash('Pic
     LIVE.pending=null;liveBanner();if(!liveIngest(d))throw new Error('Nothing to show from that save.');
     LIVE.src='save';LIVE.err='';LIVE.at=Date.now();MYSAVE.name=f.name;LPIN=null;MAP.pop=null;$('#mapPop').hidden=true;
     if(MAPF.live)MAPF.live.on=true;
+    const gmMsg=[unlFromSave(d.unl,f.name),gmFromSave(d,f.name)].filter(Boolean).join('. ');
     try{await MDB.put('mysave',{name:f.name,d})}catch(x){flash('Your save is on the map for now, but this browser won’t keep it after a reload')}
-    flash(`Loaded ${f.name}: ${d.b.length.toLocaleString()} buildings, ${d.belts.length.toLocaleString()} belts`)}
+    flash(`Loaded ${f.name}: ${d.b.length.toLocaleString()} buildings, ${d.belts.length.toLocaleString()} belts`+(gmMsg?'. '+gmMsg:''))}
   catch(x){flash('Couldn’t read that save. '+(x&&x.message||''))}
   MYSAVE.busy='';mapPalRender();mapSideRender();mapDraw()}
-async function mySaveClear(){try{await MDB.del('mysave')}catch(x){}LIVE.src='';MYSAVE.name='';liveClear();flash('Your save was removed from this browser');
+async function mySaveClear(){try{await MDB.del('mysave')}catch(x){}LIVE.src='';MYSAVE.name='';liveClear();gmNodes();if(GM.from){GM.from='';try{localStorage.setItem('pfm-gamemode',JSON.stringify(GM))}catch(x){}}mapDraw();flash('Your save was removed from this browser');
   if(AUTH.session&&AUTH.admin)liveLoad()}
-async function mySaveBoot(){try{const s=await MDB.get('mysave');if(s&&s.d&&liveIngest(s.d)){LIVE.src='save';MYSAVE.name=s.name||'your save';LIVE.at=Date.now()}}catch(e){}}
+async function mySaveBoot(){try{const s=await MDB.get('mysave');if(s&&s.d&&liveIngest(s.d)){LIVE.src='save';MYSAVE.name=s.name||'your save';LIVE.at=Date.now();gmNodes()}}catch(e){}}
 const liveIsSave=()=>LIVE.src==='save';
 /* ---- GTALHub sign-in: the server layer is only for accounts on the sync-map function's list ---- */
 const SB_URL='https://hjwuluhdiczmssldyeus.supabase.co',SB_KEY='sb_publishable_zAZpo7UDyx1eHD_HpayR-g_RRjdgtO9',LIVE_FN=SB_URL+'/functions/v1/sync-map';
@@ -3297,7 +3346,7 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
       `<span><button type="button" class="linkb" data-mysave="load" title="Show a save file from this computer instead">Load a save</button> · <button type="button" class="linkb" data-lsync${LIVE.running?' disabled':''} title="Pull a fresh snapshot from the server now. Takes about 3 minutes.">${LIVE.running?'Syncing…':'Sync now'}</button></span></div>`+
       (LIVE.syncMsg?`<p class="fsync-msg">${LIVE.syncMsg}</p>`:'')}}
   else h+=`<div class="mysave"><button type="button" class="btn primary" data-mysave="load">Load your save file…</button>`+
-    `<p class="fnote">See your own factory on the map: buildings, belts, pipes, power lines and which collectibles you’ve picked up. The file is read right here in your browser and never uploaded. Or drop a .sav file onto the map.</p>`+
+    `<p class="fnote">See your own factory on the map, with buildings, belts, pipes, power lines and the collectibles you’ve picked up. It also fills in Game progress and your world’s Game mode. The file is read right here in your browser and never uploaded. Or drop a .sav file onto the map.</p>`+
     `<details class="fnote mywhere"><summary>Where are my saves?</summary>On Windows, paste <code>%LOCALAPPDATA%\\FactoryGame\\Saved\\SaveGames</code> into the file window’s address bar, then open the folder with the long number. Each world’s saves end in .sav.</details></div>`;
   /* nodes */
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{cnt[n.r]=(cnt[n.r]||0)+1});const tap=liveTapped();
@@ -3409,7 +3458,7 @@ function cavePaint(g){if(!MAPF.caves)return;if(!CAVE.path){caveLoad();return}con
   if(MV.z/MV.fz>=1.3){const r=3.6*px,D='#5a2a6e',L='#e8cdff';g.lineCap='round';
     (CAVE.bars||[]).forEach(([a,b])=>{g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.strokeStyle=D;g.lineWidth=2*r+2.5*px;g.stroke();g.strokeStyle=L;g.lineWidth=2*r;g.stroke()});
     CAVE.ent.forEach(e=>{g.beginPath();g.arc(e.x,e.y,r+1.4*px,0,7);g.fillStyle=D;g.fill();g.beginPath();g.arc(e.x,e.y,r,0,7);g.fillStyle=L;g.fill()})}}
-function mapPrep(){cavePrep();if(LIVE.d)liveIngest(LIVE.d);if(MAP.data)[...MAP.data.nodes,...MAP.data.cols].forEach(o=>{const m=w2m(o.x,o.y);o.mx=m.x;o.my=m.y})}
+function mapPrep(){cavePrep();if(LIVE.d)liveIngest(LIVE.d);if(MAP.data)[...MAP.data.nodes,...MAP.data.cols].forEach(o=>{const m=w2m(o.x,o.y);o.mx=m.x;o.my=m.y});gmNodes()}
 function mapSetData(d,auto){const D=mapNorm(d);if(!D)return false;MAP.data=D;MAP.auto.data=!!auto;mapPrep();if(MAP.sel&&!mapFind(MAP.sel))MAP.sel=null;mapAfterLoad();return true}
 function mapAfterLoad(){mapPalRender();mapSideRender();mapEmpty();if(!mv.hidden){if(!MV.fit)mapFit();else mapDraw()}}
 const localPage=()=>location.protocol==='file:'||/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
@@ -3617,11 +3666,14 @@ const W_SE=[[1,'Distribution Platform',[['Smart Plating',50]],'Tiers 3 and 4'],
   [3,'Main Body',[['Versatile Framework',2500],['Modular Engine',500],['Adaptive Control Unit',100]],'Tiers 7 and 8'],
   [4,'Propulsion',[['Assembly Director System',500],['Magnetic Field Generator',500],['Thermal Propulsion Rocket',250],['Nuclear Pasta',100]],'Tier 9'],
   [5,'Assembly',[['Nuclear Pasta',1000],['Biochemical Sculptor',1000],['AI Expansion Server',256],['Ballistic Warp Drive',200]],'Project Assembly launch, and the Employee of the Planet cup in the AWESOME Shop']];
+W_SE.forEach(p=>p[4]=p[2].map(x=>[...x]));
+function gmSpace(){const m=+GM.space||1;W_SE.forEach(p=>{p[2]=p[4].map(([i,q])=>[i,Math.max(1,Math.round(q*m))])})}
+gmSpace();
 let W_SETIME=60;try{W_SETIME=+localStorage.getItem('pfm-se-time')||60}catch(e){}
 const W_SETIMES=[[30,'30 minutes'],[60,'1 hour'],[120,'2 hours'],[240,'4 hours'],[480,'8 hours'],[1440,'24 hours']];
 function wElevatorPage(){const tl=(W_SETIMES.find(t=>t[0]===W_SETIME)||[0,W_SETIME+' minutes'])[1];
   return`<div class="whead"><div><div class="wkick">Progression</div><h1>Space Elevator</h1></div>${wStar('elevator')}</div>`+
-    `<p class="wmut">What each phase needs delivered to the Space Elevator, and what it unlocks. Amounts are for the default cost; worlds made with a different Space Elevator cost setting need more or less. <b>Plan this phase</b> puts each part in the planner as a goal sized to finish in the time you pick, and builds its whole production chain.</p>`+
+    `<p class="wmut">What each phase needs delivered to the Space Elevator, and what it unlocks. ${+GM.space!==1?`Amounts include your world’s <b>×${GM.space}</b> Space Elevator cost (Game mode, in Game progress). `:'Amounts are for the default cost. If your world uses a different Space Elevator cost, set it under Game mode in Game progress. '}<b>Plan this phase</b> puts each part in the planner as a goal sized to finish in the time you pick, and builds its whole production chain.</p>`+
     `<label class="f se-time">Finish each phase in <select data-setime>${W_SETIMES.map(([v,l])=>`<option value="${v}"${v===W_SETIME?' selected':''}>${l}</option>`).join('')}</select></label>`+
     W_SE.map(([n,name,parts,un])=>`<section class="se-ph"><div class="se-h"><h2>Phase ${n} · ${esc(name)}</h2><button type="button" class="btn" data-sephase="${n}">Plan this phase</button></div>`+
       `<div class="wtw"><table class="wt se-main"><thead><tr><th>Part</th><th>Amount</th><th>Per minute for ${esc(tl)}</th></tr></thead><tbody>${parts.map(([i,q])=>`<tr><td>${wLink(i)}</td><td class="wn2">${q.toLocaleString()}</td><td class="wn2">${fmt(q/W_SETIME)}</td></tr>`).join('')}</tbody></table></div>`+
@@ -4386,8 +4438,52 @@ function fillSettings(){document.querySelectorAll('[data-gen]').forEach(c=>c.che
   $('#uWater').checked=UNL.water;$('#uOil').checked=UNL.oil;
   document.querySelectorAll('[data-bld]').forEach(c=>c.checked=!!UNL.blds[c.dataset.bld])}
 function progSum(){const nb=LOCKABLE.filter(b=>!UNL.blds[b]).length,na=Object.values(UNL.alts).filter(Boolean).length;
-  $('#progSum').textContent=`${BELTS[UNL.belt-1][1]} belt · ${UNL.miner} miner · ${UNL.shards?UNL.shards+' shard'+(UNL.shards>1?'s':''):'no shards'}`+(na?` · ${na} alt${na>1?'s':''}`:'')+(UNL.sloop?' · sloops':'')+(nb?` · ${nb} locked`:'')}
+  $('#progSum').textContent=`${BELTS[UNL.belt-1][1]} belt · ${UNL.miner} miner · ${UNL.shards?UNL.shards+' shard'+(UNL.shards>1?'s':''):'no shards'}`+(na?` · ${na} alt${na>1?'s':''}`:'')+(UNL.sloop?' · sloops':'')+(nb?` · ${nb} locked`:'')+gmSummary().map(x=>' · '+x).join('')}
 $('#palList').addEventListener('click',e=>{if(e.target.closest('[data-open-prog]'))$('#btnSet').click()},true);
+/* ---- Game mode: fill, change, and what it touches ---- */
+const GM_RAND={def:'Default',random:'Random',basic:'Basic Resource Rich',adv:'Advanced Resource Rich',fossil:'Fossil Fuel Rich'};
+const GM_PUR={def:'Default',allpure:'All Pure',up:'Mostly Pure',avg:'Average',down:'Mostly Impure',allimpure:'All Impure',random:'Random'};
+const gmSaveNodes=()=>liveIsSave()&&LIVE.d&&Array.isArray(LIVE.d.nodes)&&LIVE.d.nodes.length?LIVE.d.nodes:null;
+const gmMult=v=>'×'+(+v);
+function gmSummary(){const p=[];if(+GM.cost!==1)p.push('cost '+gmMult(GM.cost));if(+GM.power!==1)p.push('power '+gmMult(GM.power));if(+GM.space!==1)p.push('elevator '+gmMult(GM.space));
+  if(GM.rand!=='def'||GM.pur!=='def')p.push('nodes changed');return p}
+function gmFill(){const uf=$('#unlFrom');if(uf){uf.hidden=!UNL.from;uf.innerHTML=UNL.from?`Filled in from your save <b>${esc(UNL.from.replace(/\.sav$/i,''))}</b>. Change anything below if it’s not right.`:''}
+  $('#gmCost').value=String(+GM.cost);$('#gmPower').value=String(+GM.power);$('#gmSpace').value=String(+GM.space);$('#gmRand').value=GM.rand;$('#gmPur').value=GM.pur;
+  const n=[],sv=gmSaveNodes();if(GM.from)n.push(`Set from your save <b>${esc(GM.from.replace(/\.sav$/i,''))}</b>${GM.seed!=null?` · world seed ${GM.seed}`:''}.`);
+  if(+GM.cost!==1)n.push('Recipe inputs are rounded per cycle to whole items, the way the game does it, so some rates move a little more or less than the multiplier.');
+  if(sv)n.push('The map shows your world’s own nodes from your save.');
+  else if(GM.rand!=='def'||GM.pur==='random')n.push('Random node layouts and purities can’t be worked out from the setting alone. Load your save on the map to see your world’s nodes.');
+  else if(GM.pur!=='def')n.push(`The map shows nodes with ${GM_PUR[GM.pur]} purity applied. Geysers don’t change.`);
+  $('#gmNote').innerHTML=n.join(' ');$('#gmNote').hidden=!n.length}
+function gmNodes(){const D=MAP.data;if(!D)return;const sv=gmSaveNodes(),ov=sv?new Map(sv.map(x=>[x[0],x])):null,LV=['Impure','Normal','Pure'];
+  const shift=p=>{const i=LV.indexOf(p);if(i<0)return p;return GM.pur==='allpure'?'Pure':GM.pur==='allimpure'?'Impure':GM.pur==='avg'?'Normal':GM.pur==='up'?LV[Math.min(2,i+1)]:GM.pur==='down'?LV[Math.max(0,i-1)]:p};
+  D.nodes.forEach(n=>{if(n.r0===undefined){n.r0=n.r;n.p0=n.p}n.r=n.r0;n.p=n.p0;
+    if(ov){const o=ov.get(n.id);if(o){if(o[1]&&CLS_ITEM[o[1]])n.r=CLS_ITEM[o[1]];if(o[2])n.p=o[2]}}
+    else if(n.k!=='geyser'&&n.k!=='well'&&GM.rand==='def'&&GM.pur!=='random')n.p=shift(n.p)})}
+function gmApply(){try{localStorage.setItem('pfm-gamemode',JSON.stringify(GM))}catch(e){}
+  gmRecipes();gmSpace();gmNodes();S.nodes.forEach(buildNode);renderPalette();refresh();progSum();
+  if(!$('#settings').hidden)gmFill();if(typeof mapPalRender==='function'&&MAP.data){mapPalRender();mapSideRender();mapDraw()}
+  if(/^#\/?wiki/.test(location.hash))route()}
+/* Game progress from a save: the recipes the save has unlocked decide belts, pipes, miners, extractors, generators, buildings and alternates */
+function unlFromSave(u,name){if(!u||!Array.isArray(u.recipes)||!u.recipes.length)return'';const A=new Set(u.recipes),has=x=>A.has(x);
+  let belt=1;for(let k=6;k>=1;k--)if(has('ConveyorBeltMk'+k)){belt=k;break}
+  const ok=r=>A.has(RCLS[r.id]);
+  UNL={...UNL,belt,pipe:has('PipelineMK2')?2:1,miner:has('MinerMk3')?'Mk.3':has('MinerMk2')?'Mk.2':'Mk.1',shards:u.overclock?3:0,
+    water:has('WaterPump'),oil:has('OilPump'),well:has('FrackingSmasher'),sloop:!!u.boost,
+    gens:{coal:has('GeneratorCoal'),fuel:has('GeneratorFuel'),nuclear:has('GeneratorNuclear'),biomass:u.recipes.some(x=>/^GeneratorBiomass/.test(x)),geo:has('GeneratorGeoThermal')},
+    blds:Object.fromEntries(LOCKABLE.map(b=>[b,RECIPES.some(r=>r.bld===b&&ok(r))])),
+    alts:Object.fromEntries(RECIPES.filter(r=>r.alt&&ok(r)).map(r=>[r.id,true])),from:name};
+  if(!$('#settings').hidden)fillSettings();applyUnlocks();
+  const na=Object.keys(UNL.alts).length;return`Game progress from your save: ${BELTS[belt-1][1]} belt, ${UNL.miner} miner, ${na} alternate${na===1?'':'s'}`}
+function gmFromSave(d,name){const g=d&&d.gm||{},en=(v,m)=>{for(const [re,k] of m)if(re.test(v||''))return k;return'def'};
+  GM={cost:g.cost||1,power:g.power||1,space:g.space||1,
+    rand:en(g.rand,[[/Strict|Random/i,'random'],[/Basic/i,'basic'],[/Advanced/i,'adv'],[/Fossil/i,'fossil']]),
+    pur:en(g.pur,[[/AllPure|Pure$/i,'allpure'],[/Increase/i,'up'],[/Average|Normal/i,'avg'],[/Decrease/i,'down'],[/AllImpure|Impure$/i,'allimpure'],[/Random/i,'random']]),
+    seed:g.seed??null,from:name};
+  gmApply();const p=gmSummary();return p.length?'Game mode from your save: '+p.join(', '):''}
+[['#gmCost','cost'],['#gmPower','power'],['#gmSpace','space']].forEach(([id,k])=>$(id).addEventListener('change',e=>{GM[k]=+e.target.value;GM.from='';gmApply()}));
+$('#gmRand').addEventListener('change',e=>{GM.rand=e.target.value;GM.from='';gmApply()});
+$('#gmPur').addEventListener('change',e=>{GM.pur=e.target.value;GM.from='';gmApply()});
 /* color each default by how strong it is: red (lowest) → orange → yellow → green (best) */
 const DEF_LV={dTier:v=>({'Mk.1':0,'Mk.2':2,'Mk.3':3})[v],dShards:v=>+v,dMShards:v=>+v,dPur:v=>({Impure:0,Normal:2,Pure:3})[v],dSloop:v=>v==='fill'?'s':null};
 function paintDefs(){Object.entries(DEF_LV).forEach(([id,f])=>{const el=document.getElementById(id);if(!el)return;const v=f(el.value);if(v==null)delete el.dataset.lv;else el.dataset.lv=v})}
@@ -4437,7 +4533,7 @@ $('#uWater').onchange=e=>{UNL.water=e.target.checked;applyUnlocks()};
 $('#uOil').onchange=e=>{UNL.oil=e.target.checked;applyUnlocks()};
 $('#uBlds').addEventListener('change',e=>{const c=e.target.closest('[data-bld]');if(!c)return;UNL.blds[c.dataset.bld]=c.checked;applyUnlocks()});
 $('#uAll').onclick=()=>{const keepAlts=UNL.alts,keepPref=UNL.pref;UNL=JSON.parse(JSON.stringify(UNL_DEF));UNL.alts=Object.fromEntries(ALTS.map(r=>[r.id,true]));UNL.pref=keepPref;fillSettings();applyUnlocks()};
-$('#btnSet').onclick=()=>{fillSettings();$('#settings').hidden=false;setTimeout(()=>$('#uBelt').focus(),0)};
+$('#btnSet').onclick=()=>{fillSettings();gmFill();$('#settings').hidden=false;setTimeout(()=>$('#uBelt').focus(),0)};
 function applyPrefs(rebuild){document.body.classList.toggle('noanim',!PREFS.anim);document.body.classList.toggle('tiers',PREFS.tiers);document.body.classList.toggle('compact',PREFS.compact);document.body.classList.toggle('lbl-hover',PREFS.labels==='hover');document.body.classList.toggle('lbl-hidden',PREFS.labels==='hidden');
   try{localStorage.setItem('ficsit-line-planner-v1-prefs',JSON.stringify(PREFS))}catch(e){}if(rebuild){S.nodes.forEach(buildNode);renderPalette();refresh(false)}updateSelBar()}
 function fillPrefs(){['Chain','Thick','Tiers','Heat','Limit'].forEach(k=>$('#p'+k).checked=PREFS[k.toLowerCase()]);$('#pAnim').checked=PREFS.anim;$('#pLabels').value=PREFS.labels;$('#pPrec').value=PREFS.prec;$('#pTips').checked=PREFS.tips;$('#pConfirm').checked=PREFS.confirmClear}
@@ -4455,6 +4551,8 @@ $('#btnHelp').onclick=openHelp;
 /* What's new — add newest entries at the top. tag: new | improved | fixed | removed */
 const CHANGES=[
  {d:'2026-11-23',items:[
+  ['new','Game mode in Game progress: recipe cost, power and Space Elevator multipliers and node purity from 1.2’s Game Modes. Recipe inputs round per cycle the way the game does.'],
+  ['new','Loading your save on the map also fills in Game progress and Game mode, and shows your world’s own resource nodes when the layout or purity was randomized.'],
   ['new','Map: load your own save file to see your factory, pioneers and which slugs, Somersloops, Mercer Spheres and crash sites you’ve already collected. It’s read in your browser and never uploaded.']]},
  {d:'2026-11-09',items:[
   ['changed','Map: zooming in past the map picture’s own detail fades the picture back so the nodes stay crisp, instead of showing a stretched blur.'],
@@ -4703,4 +4801,4 @@ route();
 })();
 </script>
 </body></html>
-<!-- pfm: ko-fi + fan-made notice v3 -->
+<!-- pfm: game modes v4 -->
