@@ -749,6 +749,21 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
   .stats{order:5;width:100%}
 }
 @media (max-width:560px){ .legend{display:none} .brand h1{font-size:19px} }
+
+/* phones and tablets: the panel buttons and the main actions live in a bar at the bottom, in thumb reach */
+.mbar{display:none}
+@media (max-width:1000px),(max-height:520px){
+  .app{grid-template-rows:auto minmax(0,1fr) auto}
+  .nar{display:none!important}
+  .mbar{display:flex;gap:6px;padding:0 0 env(safe-area-inset-bottom,0px)}
+  .mbar:empty{display:none}
+  #btnBal,#btnFit{display:none}
+  .mbar button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;height:46px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);font-size:11.5px;font-weight:600;padding:2px 4px;white-space:nowrap}
+  .mbar button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .mbar button.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+  .mbar button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+}
+@media (max-height:520px){.mbar button{height:38px;flex-direction:row;gap:6px;font-size:12px}.mbar button svg{width:17px;height:17px}}
 /* phones in portrait (narrow screens): two short header rows, one scrolling row of planner buttons */
 @media (max-width:600px){
   .app{gap:6px;padding-block:6px 8px;grid-template-columns:minmax(0,1fr);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
@@ -870,6 +885,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
       <div class="home-credit"><a class="kofi" href="https://ko-fi.com/preciisiion_ii" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2 0 3.6 1.1 4.6 2.7h1c1-1.6 2.6-2.7 4.6-2.7 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg>Support this project on Ko-fi</a><p>Free to use, fan-made, and not affiliated with or endorsed by Coffee Stain Studios, the makers of Satisfactory.</p></div>
     </div></section>
   </main>
+  <nav class="mbar" id="mbar" aria-label="Quick actions"></nav>
 </div>
 <div id="ghost" hidden></div>
 <div id="settings" hidden>
@@ -3025,7 +3041,7 @@ async function mySaveLoad(f){if(!f)return;if(!/\.sav$/i.test(f.name)){flash('Pic
     try{await MDB.put('mysave',{name:f.name,d})}catch(x){flash('Your save is on the map for now, but this browser won’t keep it after a reload')}
     flash(`Loaded ${f.name}: ${d.b.length.toLocaleString()} buildings, ${d.belts.length.toLocaleString()} belts`+(gmMsg?'. '+gmMsg:''))}
   catch(x){flash('Couldn’t read that save. '+(x&&x.message||''))}
-  MYSAVE.busy='';mapPalRender();mapSideRender();mapDraw()}
+  MYSAVE.busy='';mapPalRender();mapSideRender();mapDraw();mbarRender()}
 async function mySaveClear(){try{await MDB.del('mysave')}catch(x){}LIVE.src='';MYSAVE.name='';liveClear();gmNodes();if(GM.from){GM.from='';try{localStorage.setItem('pfm-gamemode',JSON.stringify(GM))}catch(x){}}mapDraw();flash('Your save was removed from this browser');
   if(AUTH.session&&AUTH.admin)liveLoad()}
 async function mySaveBoot(){try{const s=await MDB.get('mysave');if(s&&s.d&&liveIngest(s.d)){LIVE.src='save';MYSAVE.name=s.name||'your save';LIVE.at=Date.now();gmNodes()}}catch(e){}}
@@ -3613,7 +3629,7 @@ function setView(v){if(v==='grid')v='planner';if(!VIEWS[v]||v===VIEW)return;cons
   B.remove('v-planner','v-map','v-wiki','v-home');B.add('v-'+v);B.toggle('mapmode',v!=='planner');
   Object.entries(VIEWS).forEach(([k,qs])=>qs.forEach(q=>$(q).hidden=k!==v));
   document.querySelectorAll('.vsw [data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===v));
-  $('#tgPal').textContent=v==='map'?'Layers':v==='wiki'?'Contents':'Recipes';$('#tgSum').textContent=v==='map'?'Details':'Totals';
+  $('#tgPal').textContent=v==='map'?'Layers':v==='wiki'?'Contents':'Recipes';$('#tgSum').textContent=v==='map'?'Details':'Totals';if(typeof mbarRender==='function')mbarRender();
   ['#pal','#sum','#mapPal','#mapSide','#wikiNav'].forEach(q=>$(q).classList.remove('open'));$('#mapTip').hidden=true;
   if(v==='map'){mapPalRender();mapSideRender();mapEmpty();requestAnimationFrame(()=>{if(!MV.fit||!MV.touched)mapFit();else mapDraw()})}
   if(v==='planner'&&prev){const first=!PL_SEEN;requestAnimationFrame(()=>{S.nodes.forEach(buildNode);refresh(false);if(first)fitView();else applyView()})}
@@ -4711,6 +4727,21 @@ $('#btnClear').onclick=()=>{const b=$('#btnClear');
   if(!clearArm&&PREFS.confirmClear){b.textContent='Confirm clear';b.classList.add('danger');clearArm=setTimeout(()=>{b.textContent='Clear';b.classList.remove('danger');clearArm=null},3000);return}
   if(clearArm)clearTimeout(clearArm);clearArm=null;b.textContent='Clear';b.classList.remove('danger');
   S.nodes.slice().forEach(n=>removeNode(n.id));S.edges=[];refresh();};
+/* ---- bottom bar on phones and tablets ---- */
+const MB_I={list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',layers:'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/>',
+  sum:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',fit:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',bal:'<path d="M12 3v18M5 7h14M5 7l-3 7a3.5 3.5 0 0 0 6 0zM19 7l-3 7a3.5 3.5 0 0 0 6 0z"/>',
+  save:'<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>',book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M19 19v2H6"/>',back:'<path d="M15 6l-6 6 6 6"/>'};
+const mbB=(k,ic,label,pri)=>`<button type="button" data-mb="${k}"${pri?' class="pri"':''}><svg viewBox="0 0 24 24" aria-hidden="true">${MB_I[ic]}</svg><span>${label}</span></button>`;
+function mbarRender(){const el=$('#mbar');if(!el)return;
+  el.innerHTML=VIEW==='planner'?mbB('pal','list','Recipes')+mbB('bal','bal','Balance',1)+mbB('fit','fit','Fit')+mbB('sum','sum','Totals'):
+    VIEW==='map'?mbB('pal','layers','Layers')+mbB('save','save',liveIsSave()?'Load another':'Your save')+mbB('fit','fit','Fit')+mbB('sum','info','Details'):
+    VIEW==='wiki'?mbB('back','back','Back')+mbB('pal','book','Contents'):'';mbarState()}
+function mbarState(){const P={planner:['#pal','#sum'],map:['#mapPal','#mapSide'],wiki:['#wikiNav',null]}[VIEW];if(!P)return;
+  const b1=$('#mbar [data-mb="pal"]'),b2=$('#mbar [data-mb="sum"]');if(b1)b1.setAttribute('aria-pressed',$(P[0]).classList.contains('open'));if(b2&&P[1])b2.setAttribute('aria-pressed',$(P[1]).classList.contains('open'))}
+$('#mbar').addEventListener('click',e=>{const b=e.target.closest('[data-mb]');if(!b)return;const k=b.dataset.mb;
+  if(k==='pal')$('#tgPal').click();else if(k==='sum')$('#tgSum').click();else if(k==='bal')$('#btnBal').click();
+  else if(k==='fit')(VIEW==='map'?$('#mzFit'):$('#btnFit')).click();else if(k==='save')$('#mySaveIn').click();else if(k==='back')history.back();mbarState()});
+{const mo=new MutationObserver(mbarState);['#pal','#sum','#mapPal','#mapSide','#wikiNav'].forEach(q=>{const n=$(q);if(n)mo.observe(n,{attributes:true,attributeFilter:['class']})})}
 $('#tgPal').onclick=()=>{const p={planner:'#pal',map:'#mapPal',wiki:'#wikiNav'}[VIEW],q={planner:'#sum',map:'#mapSide'}[VIEW];if(p)$(p).classList.toggle('open');if(q)$(q).classList.remove('open')};
 $('#tgSum').onclick=()=>{const q={planner:'#sum',map:'#mapSide'}[VIEW],p={planner:'#pal',map:'#mapPal'}[VIEW];if(q)$(q).classList.toggle('open');if(p)$(p).classList.remove('open')};
 
@@ -4847,4 +4878,4 @@ route();
 })();
 </script>
 </body></html>
-<!-- pfm: phone landscape v6 -->
+<!-- pfm: bottom bar v7 -->
