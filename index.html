@@ -749,6 +749,43 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
   .stats{order:5;width:100%}
 }
 @media (max-width:560px){ .legend{display:none} .brand h1{font-size:19px} }
+/* phones in portrait (narrow screens): two short header rows, one scrolling row of planner buttons */
+@media (max-width:600px){
+  .app{gap:6px;padding-block:6px 8px;grid-template-columns:minmax(0,1fr);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+  .top{gap:6px;min-width:0}
+  .brand h1,.plan-tag{display:none}
+  .vsw button{padding:4px 9px;font-size:12px}
+  .prog{margin-right:0;padding:3px 8px;flex:1 1 auto;min-width:0}.prog-s{display:none}.prog-t{font-size:12.5px}
+  .btn{padding:4px 8px;font-size:12.5px}.helpb{width:26px;height:26px;font-size:15px}
+  .set-word{display:none}
+  .stats{order:0;width:100%;gap:10px}.stats span{font-size:9px;letter-spacing:.04em}.stats b{font-size:11.5px}
+  .stats div:nth-child(4),.stats div:nth-child(5){display:none}
+  .actions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:1px}
+  .actions::-webkit-scrollbar{display:none}
+  .actions .grp{flex-wrap:nowrap;flex:none}.actions .grp.sep{border-left:1px solid var(--line);padding-left:8px}
+  .actions>.grp:nth-last-child(-n+2){order:-1}.actions>.grp:nth-last-child(2){border-left:0;padding-left:0}
+  .selbar,.legend{display:none}
+  .whead{flex-wrap:wrap}.whead h1{font-size:24px}.wart{padding:12px 12px 30px}
+  .home-hero h2{font-size:24px}
+}
+/* phones in landscape (short screens): squeeze the header so the grid, map and wiki get the height */
+@media (max-height:520px){
+  .app{gap:6px;padding-block:6px 8px;grid-template-columns:minmax(0,1fr)}
+  .top{gap:6px 8px;flex-wrap:nowrap;min-width:0}
+  .actions>.grp:nth-last-child(-n+2){order:-1}.actions>.grp:nth-last-child(2){border-left:0;padding-left:0}
+  .brand h1,.plan-tag{display:none}
+  .prog{margin-right:0;padding:3px 8px;flex:none}.prog-s{display:none}.prog-t{font-size:12.5px}
+  .vsw{flex:none}.vsw button{padding:4px 9px;font-size:12px}
+  .btn{padding:4px 8px;font-size:12.5px}.helpb{width:26px;height:26px;font-size:15px}
+  .stats{order:0;width:auto;gap:8px;flex:none}.stats span{font-size:9px;letter-spacing:.04em}.stats b{font-size:11.5px}
+  .stats div:nth-child(4),.stats div:nth-child(5){display:none}
+  .actions{flex-wrap:nowrap;overflow-x:auto;width:auto;flex:1 1 0;min-width:0;scrollbar-width:none;padding-bottom:1px}
+  .actions::-webkit-scrollbar{display:none}
+  .actions .grp{flex-wrap:nowrap;flex:none}.actions .grp.sep{border-left:1px solid var(--line);padding-left:8px}
+  .selbar,.legend{display:none}
+  .whead h1{font-size:26px}.wart{padding:12px 14px 30px}
+  .home-hero h2{font-size:24px;margin:4px 0 8px}
+}
 </style>
 
 <div class="app">
@@ -776,7 +813,7 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
         <button class="btn" id="btnRedo" title="Redo (Ctrl+Shift+Z or Ctrl+Y)" disabled>↷ Redo</button></div>
       <div class="grp sep pmonly"><button class="btn" id="btnIO">Plans</button>
         <button class="btn" id="btnClear">Clear</button></div>
-      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button" hidden>Admin</button><a class="btn kofib" href="https://ko-fi.com/preciisiion_ii" target="_blank" rel="noopener" title="Support this project on Ko-fi" aria-label="Support this project on Ko-fi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2 0 3.6 1.1 4.6 2.7h1c1-1.6 2.6-2.7 4.6-2.7 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg></a><button class="btn" id="btnIcons" type="button" title="Icons, wires and other preferences">⚙ Settings</button>
+      <div class="grp sep"><button class="btn acct" id="btnAcct" type="button" hidden>Admin</button><a class="btn kofib" href="https://ko-fi.com/preciisiion_ii" target="_blank" rel="noopener" title="Support this project on Ko-fi" aria-label="Support this project on Ko-fi"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 8 3.4 4.5 6.9 4.5c2 0 3.6 1.1 4.6 2.7h1c1-1.6 2.6-2.7 4.6-2.7 3.5 0 5.5 3.5 4.2 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/></svg></a><button class="btn" id="btnIcons" type="button" title="Settings" aria-label="Settings">⚙<span class="set-word"> Settings</span></button>
         <button type="button" class="thsw" id="thSw" role="switch" aria-checked="true" aria-label="Dark mode" title="Switch light / dark"><svg class="ic sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><g stroke-linecap="round"><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></g></svg><span class="trk"><span class="knob"></span></span><svg class="ic moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg></button>
         <button class="btn nar" id="tgSum" aria-controls="sum">Totals</button></div>
       <div class="grp sep"><button class="helpb" id="btnHelp" type="button" title="Help (F1)" aria-label="Help">?</button></div>
@@ -1021,8 +1058,8 @@ th[aria-sort]{cursor:pointer}th[aria-sort]:hover{background:color-mix(in srgb,va
 <script>
 (function(){
 "use strict";
-/* ---------- Game data: Satisfactory 1.0 standard recipes, per minute at 100% clock ---------- */
-/* Game data: every machine recipe in Satisfactory 1.0 (standard + alternate), per minute at 100% clock.
+/* ---------- Game data: Satisfactory 1.2 standard recipes (same as 1.0), per minute at 100% clock ---------- */
+/* Game data: every machine recipe in Satisfactory 1.2 (standard + alternate), per minute at 100% clock.
    Source: the game's own Docs.json via the SatisfactoryTools data set. */
 const BLD={"Smelter":4,"Constructor":4,"Assembler":15,"Foundry":16,"Manufacturer":55,"Refinery":30,"Packager":10,"Blender":75,"Particle Accelerator":0,"Converter":0,"Quantum Encoder":0};
 const FLUID_LIST=["Alumina Solution","Crude Oil","Dark Matter Residue","Dissolved Silica","Excited Photonic Matter","Fuel","Heavy Oil Residue","Ionized Fuel","Liquid Biofuel","Nitric Acid","Nitrogen Gas","Rocket Fuel","Sulfuric Acid","Turbofuel","Water"];
@@ -1858,7 +1895,7 @@ function summary(P){
   const gk=Object.keys(gens).sort();if(gk.length)h+='<h2>Power</h2>'+gk.map(k=>`<div class="row"><span>${k}</span><span class="n">${fmt(gens[k])} MW</span></div>`).join('')+
     `<div class="row"><span>Factory uses</span><span class="n">${fmt(pow)} MW</span></div><div class="row ${made-pow<-.05?'bad':'ok'}"><span><b>${made-pow<-.05?'Short by':'Spare'}</b></span><span class="n">${fmt(Math.abs(made-pow))} MW</span></div>`;
   h+='<h2>Buildings</h2>'+(bk.length?bk.map(k=>`<div class="row"><span>${by[k].n}× ${k}</span><span class="n"${by[k].gen?' style="color:var(--ok)"':''}>${by[k].gen?'+':''}${fmt(by[k].p)} MW</span></div>`).join(''):'<div class="empty">No buildings yet.</div>');
-  h+='<p class="note">All Satisfactory 1.0 recipes, plus the alternates you\u2019ve unlocked in Game progress. Rates per minute. Machines is the output you need, counted in machines at 100%. Pick how many power shards you have on each card and it works out how many to build and the clock to set. Wire labels show the slowest belt or pipe that carries the flow.</p>';
+  h+='<p class="note">All Satisfactory 1.2 recipes, plus the alternates you\u2019ve unlocked in Game progress. Rates per minute. Machines is the output you need, counted in machines at 100%. Pick how many power shards you have on each card and it works out how many to build and the clock to set. Wire labels show the slowest belt or pipe that carries the flow.</p>';
   $('#sum').innerHTML=h;
 }
 function applyView(){queueMini();
@@ -3297,6 +3334,14 @@ function mapTip(o,cx,cy){const t=$('#mapTip');if(!o){t.hidden=true;return}const 
 function liveTip(l,cx,cy){const t=$('#mapTip');t.innerHTML=liveTipHTML(l);t.hidden=false;
   t.style.left=Math.max(8,Math.min(cx+14,mv.clientWidth-t.offsetWidth-8))+'px';t.style.top=(cy-t.offsetHeight-12<8?cy+16:cy-t.offsetHeight-12)+'px'}
 let mdrag=null;
+/* two-finger pinch to zoom on phones and tablets; runs before the drag handlers and takes over while two fingers are down */
+const MPTS=new Map();let mpinch=null;
+const mPinchPair=()=>{const [a,b]=[...MPTS.values()];return{d:Math.hypot(a.x-b.x,a.y-b.y),x:(a.x+b.x)/2,y:(a.y+b.y)/2}};
+mc.addEventListener('pointerdown',e=>{MPTS.set(e.pointerId,{x:e.clientX,y:e.clientY});if(MPTS.size===2){mpinch=mPinchPair();$('#mapTip').hidden=true}},true);
+mc.addEventListener('pointermove',e=>{if(!MPTS.has(e.pointerId))return;MPTS.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(mpinch&&MPTS.size===2){const q=mPinchPair(),R=mv.getBoundingClientRect();if(mpinch.d>10){MV.x+=q.x-mpinch.x;MV.y+=q.y-mpinch.y;MV.touched=true;mapZoom(q.d/mpinch.d,q.x-R.left,q.y-R.top)}mpinch=q;e.stopImmediatePropagation()}},true);
+const mPinchEnd=e=>{MPTS.delete(e.pointerId);if(mpinch){mdrag=null;mv.classList.remove('panning');if(MPTS.size<2)mpinch=null;e.stopImmediatePropagation()}};
+mc.addEventListener('pointerup',mPinchEnd,true);mc.addEventListener('pointercancel',mPinchEnd,true);
 mc.addEventListener('pointerdown',e=>{if(e.button!==0)return;mdrag={sx:e.clientX,sy:e.clientY,ox:MV.x,oy:MV.y,moved:false};try{mc.setPointerCapture(e.pointerId)}catch(x){}});
 mc.addEventListener('pointermove',e=>{const R=mv.getBoundingClientRect(),cx=e.clientX-R.left,cy=e.clientY-R.top;
   if(mdrag){const dx=e.clientX-mdrag.sx,dy=e.clientY-mdrag.sy;if(!mdrag.moved&&Math.hypot(dx,dy)>4)mdrag.moved=true;
@@ -3735,7 +3780,7 @@ const W_TICO={tiers:'Desc_TradingPost_C',elevator:'Desc_SpaceElevator_C',mam:'De
   'Production':'Desc_ConstructorMk1_C','Extraction':'Desc_MinerMk2_C','Power':'Desc_GeneratorCoal_C','Logistics':'Desc_ConveyorAttachmentSplitter_C','Transport':'Desc_Locomotive_C','Vehicles':'Desc_Truck_C','Special':'Desc_SpaceElevator_C'};
 const wTile=(href,key,title,sub)=>{const c=W_TICO[key];return`<a href="${href}">${c&&ICONS[c]?`<img class="wti" src="${ICONS[c]}" alt="" draggable="false">`:'<i class="wti"></i>'}<div><b>${title}</b><span>${sub}</span></div></a>`};
 function wHomePage(){const ct={};W_ITEMS.forEach(i=>{const g=wGroup(i);ct[g]=(ct[g]||0)+1});
-  return`<div class="whead"><div><div class="wkick">Reference</div><h1>FICSIT wiki</h1></div></div><p class="wmut">Every item, building, recipe and unlock in Satisfactory 1.0, built from the same data as the planner. Search on the left, or start here.</p>`+
+  return`<div class="whead"><div><div class="wkick">Reference</div><h1>FICSIT wiki</h1></div></div><p class="wmut">Every item, building, recipe and unlock in Satisfactory 1.2, built from the same data as the planner. Search on the left, or start here.</p>`+
     `<h2>Progression</h2><div class="wtiles">${wTile('#/wiki/tiers','tiers','HUB tiers & milestones','What each tier costs and unlocks')}${wTile('#/wiki/elevator','elevator','Space Elevator','What each of the 5 phases needs')}${wTile('#/wiki/mam','mam','MAM research',`${W_SCH.filter(s=>s.t==='mam').length} research nodes by tree`)}${wTile('#/wiki/alts','alts','Alternate recipes',`${RECIPES.filter(r=>r.alt).length} alternates, tick off the ones you have`)}</div>`+
     `<h2>Tools &amp; reference</h2><div class="wtiles">${wTile('#/wiki/calc','calc','Calculators','Overclocking, Somersloops and storage fill times')}${wTile('#/wiki/sink','sink','AWESOME Sink points','Best items to sink per raw resource')}${wTile('#/wiki/power','power','Power &amp; fuels','Every generator and fuel side by side')}${wTile('#/wiki/belts','belts','Belts &amp; pipes','Speeds, and machines per belt for any recipe')}</div>`+
     `<h2>Items</h2><div class="wtiles">${W_IGROUPS.filter(g=>ct[g]).map(g=>wTile(`#/wiki/group/${encodeURIComponent(g)}`,g,g,`${ct[g]} items`)).join('')}</div>`+
@@ -4802,4 +4847,4 @@ route();
 })();
 </script>
 </body></html>
-<!-- pfm: caves + geyser icon v5 -->
+<!-- pfm: phone landscape v6 -->
