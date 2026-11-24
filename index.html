@@ -2317,6 +2317,7 @@ try{const f=JSON.parse(localStorage.getItem(MAPK)||'null');if(f)MAPF={...MAPF,..
 const mapSave=()=>{try{localStorage.setItem(MAPK,JSON.stringify(MAPF))}catch(e){}};
 const MRES={'Iron Ore':'#9fb0c2','Copper Ore':'#e07b3c','Limestone':'#d8cfae','Coal':'#4a4a4a','Caterium Ore':'#e8b923','Raw Quartz':'#f08fc8','Sulfur':'#e6e04a','Bauxite':'#c0582c','Uranium':'#4fd44f','SAM':'#a15fe0','Crude Oil':'#3b2a1e','Nitrogen Gas':'#a9dcec','Water':'#3aa5e6','Geyser':'#ff5a36'};
 const MCOL={slug1:['Blue Power Slug','#3d8bfd','Desc_Crystal_C'],slug2:['Yellow Power Slug','#f2c230','Desc_Crystal_mk2_C'],slug3:['Purple Power Slug','#a463f2','Desc_Crystal_mk3_C'],sloop:['Somersloop','#ff5fa8','Desc_WAT1_C'],mercer:['Mercer Sphere','#7d6bff','Desc_WAT2_C'],pod:['Crash site','#f39a4c','Desc_HardDrive_C']};
+const resCls=r=>ITEM_CLS[r]||(r==='Geyser'?'Desc_GeneratorGeoThermal_C':undefined); /* geysers show the Geothermal Generator icon */
 const MRORD=[...ORES,'Crude Oil','Nitrogen Gas','Water','Geyser'];
 const mResSort=(a,b)=>{const i=MRORD.indexOf(a),j=MRORD.indexOf(b);return(i<0?99:i)-(j<0?99:j)||a.localeCompare(b)};
 const MAP={img:null,imgSrc:'',data:null,auto:{img:false,data:false},sel:null,r:6,tiles:false};
@@ -3271,7 +3272,7 @@ function mapPaint(){mRAF=0;if(mv.hidden)return;const dpr=devicePixelRatio||1,w=m
       g.fill();g.stroke();if(o.k==='mercer'){g.beginPath();g.arc(0,0,s*.32,0,7);g.fillStyle='#fff';g.fill()}}
     if(isFound(o.id))mCheck(g,s*.78,-s*.78,pin?Math.max(4.5,s*.45):Math.max(2,s*.5),pin,!LIVE.found.has(o.id));
     g.restore()});
-  vis.forEach(({n,p,c})=>{const im=rn>=7&&mIcon(ITEM_CLS[n.r]),fill=MPC[n.p]||'#888';hits.push({o:n,x:c.x,y:c.y,r:rn+2,dx:p.x,dy:p.y});
+  vis.forEach(({n,p,c})=>{const im=rn>=7&&mIcon(resCls(n.r)),fill=MPC[n.p]||'#888';hits.push({o:n,x:c.x,y:c.y,r:rn+2,dx:p.x,dy:p.y});
     g.beginPath();g.arc(c.x,c.y,rn+1.5,0,7);g.fillStyle='#000';g.fill();
     g.beginPath();g.arc(c.x,c.y,rn-.5,0,7);g.fillStyle=fill;g.fill();
     if(im)g.drawImage(im,c.x-rn*.72,c.y-rn*.72,rn*1.44,rn*1.44);
@@ -3351,7 +3352,7 @@ function mapPalRender(){const D=MAP.data,L=MAPF.live,O=MAPF.open;
   /* nodes */
   if(D&&D.nodes.length){const cnt={};D.nodes.forEach(n=>{cnt[n.r]=(cnt[n.r]||0)+1});const tap=liveTapped();
     let b=`<div class="mchips" role="group" aria-label="Purity">${['Impure','Normal','Pure'].map(p=>`<button type="button" class="mchip" data-mp="${p}" aria-pressed="${MAPF.pur[p]!==false}" style="--pc:${MPC[p]}">${p}</button>`).join('')}</div>`+
-      `<div class="fgrid">${Object.keys(cnt).sort(mResSort).map(r=>chip(`data-mr="${escA(r)}" title="${escA(r)} · ${cnt[r]}"`,MAPF.res[r]!==false,esc(r.replace(/ Ore$| Gas$/,'').replace('Raw Quartz','Quartz').replace('Crude Oil','Oil')),fIco(ITEM_CLS[r],MRES[r]||'#888'))).join('')}</div>`+
+      `<div class="fgrid">${Object.keys(cnt).sort(mResSort).map(r=>chip(`data-mr="${escA(r)}" title="${escA(r)} · ${cnt[r]}"`,MAPF.res[r]!==false,esc(r.replace(/ Ore$| Gas$/,'').replace('Raw Quartz','Quartz').replace('Crude Oil','Oil')),fIco(resCls(r),MRES[r]||'#888'))).join('')}</div>`+
       `<div class="mlinks"><button type="button" class="linkb" data-mall="1">All</button><button type="button" class="linkb" data-mall="0">None</button></div>`+
       chk('data-mf="hideTapped"',MAPF.hideTapped,'Hide nodes already being mined',tap.size?`<em>${tap.size}</em>`:'')+
       chk('data-mf="free"',MAPF.free,'Hide nodes this plan uses');
@@ -3454,7 +3455,7 @@ function cavePrep(){if(!CAVE.raw)return;const R=Array.isArray(CAVE.raw)?{caves:C
 /* caves; ones still to be checked in-game are orange; entrances are light purple marks, shown once zoomed in a little */
 function cavePaint(g){if(!MAPF.caves)return;if(!CAVE.path){caveLoad();return}const px=1/MV.z;g.lineJoin='round';
   const shape=(P,fill,line)=>{g.fillStyle=fill;g.fill(P,'nonzero');g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=3.2*px;g.stroke(P);g.strokeStyle=line;g.lineWidth=1.6*px;g.stroke(P)};
-  shape(CAVE.path,'rgba(38,24,64,.42)','#b88cff');shape(CAVE.upath,'rgba(120,60,0,.35)','#ff9a3c');
+  shape(CAVE.path,'rgba(38,24,64,.42)','#b88cff');if(AUTH.admin||localPage())shape(CAVE.upath,'rgba(120,60,0,.35)','#ff9a3c'); /* orange: unchecked cave outlines, admins only */
   if(MV.z/MV.fz>=1.3){const r=3.6*px,D='#5a2a6e',L='#e8cdff';g.lineCap='round';
     (CAVE.bars||[]).forEach(([a,b])=>{g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.strokeStyle=D;g.lineWidth=2*r+2.5*px;g.stroke();g.strokeStyle=L;g.lineWidth=2*r;g.stroke()});
     CAVE.ent.forEach(e=>{g.beginPath();g.arc(e.x,e.y,r+1.4*px,0,7);g.fillStyle=D;g.fill();g.beginPath();g.arc(e.x,e.y,r,0,7);g.fillStyle=L;g.fill()})}}
@@ -4801,4 +4802,4 @@ route();
 })();
 </script>
 </body></html>
-<!-- pfm: game modes v4 -->
+<!-- pfm: caves + geyser icon v5 -->
